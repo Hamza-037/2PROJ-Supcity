@@ -499,4 +499,5 @@ class Citizen {
     }
 }
 
+// Export pour utilisation dans d'autres modules
 export { Citizen };

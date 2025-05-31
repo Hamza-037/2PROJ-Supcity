@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,50 @@
     <link rel="stylesheet" href="assets/styles/animations.css">
     <link rel="stylesheet" href="assets/styles/ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/menu.css">
 </head>
+
 <body>
+    <div id="mainMenu" class="main-menu">
+        <div class="menu-background">
+            <div class="background-animation"></div>
+        </div>
+
+        <div class="menu-content">
+            <div class="game-logo">
+                <h1><i class="fas fa-landmark"></i> SupCity</h1>
+                <p class="subtitle">Construisez votre civilisation à travers les âges</p>
+                <div class="version-badge">v1.0.0 - Ère Préhistorique</div>
+            </div>
+
+            <div class="main-menu-buttons">
+                <button id="newGameBtn" class="menu-btn primary">
+                    <i class="fas fa-play"></i>
+                    <span>Nouvelle Partie</span>
+                    <div class="btn-subtitle">Commencer une nouvelle civilisation</div>
+                </button>
+
+                <button id="loadGameBtn" class="menu-btn secondary">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Continuer</span>
+                    <div class="btn-subtitle">Charger une partie sauvegardée</div>
+                </button>
+
+                <button id="tutorialBtn" class="menu-btn secondary">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Tutoriel</span>
+                    <div class="btn-subtitle">Apprendre les bases du jeu</div>
+                </button>
+
+                <button id="creditsBtn" class="menu-btn secondary">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Crédits</span>
+                    <div class="btn-subtitle">À propos de SupCity</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="loadingScreen">
         <div class="loading-content">
             <h1><i class="fas fa-landmark"></i> SupCity</h1>
@@ -28,18 +71,26 @@
             </div>
 
             <div id="speedControl">
-                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause"><i class="fas fa-pause"></i></button>
+                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause"><i
+                        class="fas fa-pause"></i></button>
                 <button id="speed1Btn" class="speed-btn tooltip active" data-tooltip="Vitesse normale">1x</button>
                 <button id="speed2Btn" class="speed-btn tooltip" data-tooltip="Vitesse rapide">2x</button>
                 <button id="speed4Btn" class="speed-btn tooltip" data-tooltip="Vitesse très rapide">4x</button>
             </div>
 
             <div class="main-controls">
-                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder"><i class="fas fa-save"></i></button>
-                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger"><i class="fas fa-folder-open"></i></button>
-                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu"><i class="fas fa-redo"></i></button>
-                <button id="settingsBtn" class="control-btn tooltip" data-tooltip="Paramètres"><i class="fas fa-cog"></i></button>
-                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide"><i class="fas fa-question-circle"></i></button>
+                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder"><i
+                        class="fas fa-save"></i></button>
+                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger"><i
+                        class="fas fa-folder-open"></i></button>
+                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu"><i
+                        class="fas fa-redo"></i></button>
+                <button id="menuBtn" class="control-btn tooltip" data-tooltip="Menu principal">
+                    <i class="fas fa-home"></i></button>
+                <button id="settingsBtn" class="control-btn tooltip" data-tooltip="Paramètres"><i
+                        class="fas fa-cog"></i></button>
+                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide"><i
+                        class="fas fa-question-circle"></i></button>
                 <button id="toggleUI" class="ui-toggle-btn">☰ Menu</button>
             </div>
         </div>
@@ -129,18 +180,24 @@
                 </div>
 
                 <div class="ui-tabs">
-                    <button class="tab-btn active" data-tab="construction"><i class="fas fa-tools"></i> Construction</button>
+                    <button class="tab-btn active" data-tab="construction"><i class="fas fa-tools"></i>
+                        Construction</button>
                     <button class="tab-btn" data-tab="research"><i class="fas fa-microscope"></i> Recherche</button>
-                    <button class="tab-btn" data-tab="statistics"><i class="fas fa-chart-line"></i> Statistiques</button>
+                    <button class="tab-btn" data-tab="statistics"><i class="fas fa-chart-line"></i>
+                        Statistiques</button>
                     <button class="tab-btn" data-tab="settings"><i class="fas fa-cog"></i> Paramètres</button>
                 </div>
 
                 <div class="tab-content active" id="constructionTab">
                     <div class="construction-categories">
-                        <button class="category-btn active" data-category="basic"><i class="fas fa-home"></i> Base</button>
-                        <button class="category-btn" data-category="production"><i class="fas fa-industry"></i> Production</button>
-                        <button class="category-btn" data-category="infrastructure"><i class="fas fa-road"></i> Infrastructure</button>
-                        <button class="category-btn" data-category="advanced"><i class="fas fa-landmark"></i> Avancé</button>
+                        <button class="category-btn active" data-category="basic"><i class="fas fa-home"></i>
+                            Base</button>
+                        <button class="category-btn" data-category="production"><i class="fas fa-industry"></i>
+                            Production</button>
+                        <button class="category-btn" data-category="infrastructure"><i class="fas fa-road"></i>
+                            Infrastructure</button>
+                        <button class="category-btn" data-category="advanced"><i class="fas fa-landmark"></i>
+                            Avancé</button>
                     </div>
 
                     <div class="buildings-grid" id="buildingsGrid">
@@ -220,4 +277,5 @@
     <script src="js/Game.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
+
 </html>
