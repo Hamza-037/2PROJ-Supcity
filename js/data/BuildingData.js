@@ -25,12 +25,24 @@ class BuildingDataManager {
             maxResidents: 0,
             constructionCost: {},
             constructionTime: 0,
+
+            // PROPRIÉTÉS D'ATTRACTION ESSENTIELLES
             attracts: true,
             attractionRange: 200,
-            attractionRate: 0.003,
+            attractionRate: 0.01, // 1% par check (toutes les 2 secondes)
+
             provides: ['warmth', 'light', 'safety'],
             color: '#FF4500',
-            unlocked: true
+            unlocked: true,
+
+            // Propriétés spéciales
+            canAttractCitizens: true,
+            lightRadius: 100,
+            warmthRadius: 80,
+
+            // Effet sur le bonheur des citoyens à proximité
+            happinessBonus: 1.2,
+            happinessRadius: 150
         });
 
         this.addBuildingType('hut', {
@@ -471,7 +483,7 @@ class BuildingDataManager {
      * @returns {Array} - Liste des bâtiments
      */
     getBuildingsByCategory(category) {
-        return Object.values(this.buildingTypes).filter(building => 
+        return Object.values(this.buildingTypes).filter(building =>
             building.category === category
         );
     }
@@ -484,9 +496,9 @@ class BuildingDataManager {
     getAvailableBuildings(unlockedResearch = []) {
         return Object.values(this.buildingTypes).filter(building => {
             if (building.unlocked) return true;
-            
+
             // Vérifier si toutes les recherches requises sont débloquées
-            return building.requires.every(research => 
+            return building.requires.every(research =>
                 unlockedResearch.includes(research)
             );
         });
@@ -501,16 +513,16 @@ class BuildingDataManager {
      */
     canBuild(type, resources, unlockedResearch = []) {
         const building = this.getBuildingData(type);
-        
+
         if (!building) {
             return { canBuild: false, reason: 'Type de bâtiment inconnu' };
         }
 
         // Vérifier si débloqué
         if (!building.unlocked && !this.isUnlocked(building, unlockedResearch)) {
-            return { 
-                canBuild: false, 
-                reason: `Recherche requise: ${building.requires.join(', ')}` 
+            return {
+                canBuild: false,
+                reason: `Recherche requise: ${building.requires.join(', ')}`
             };
         }
 
@@ -540,8 +552,8 @@ class BuildingDataManager {
      */
     isUnlocked(building, unlockedResearch) {
         if (building.unlocked) return true;
-        
-        return building.requires.every(research => 
+
+        return building.requires.every(research =>
             unlockedResearch.includes(research)
         );
     }
@@ -594,7 +606,7 @@ class BuildingDataManager {
         const housingCapacity = buildings
             .filter(b => b.maxResidents > 0)
             .reduce((sum, b) => sum + b.maxResidents, 0);
-        
+
         if (population > housingCapacity * 0.8) {
             recommendations.push({
                 type: 'hut',
@@ -639,8 +651,8 @@ class BuildingDataManager {
 
         // Bonus pour les bâtiments de production près des ressources
         if (building.produces) {
-            const resourceBuildings = nearbyBuildings.filter(b => 
-                b.produces === building.produces || 
+            const resourceBuildings = nearbyBuildings.filter(b =>
+                b.produces === building.produces ||
                 (building.consumes && Object.keys(building.consumes).includes(b.produces))
             );
             efficiency += Math.min(0.3, resourceBuildings.length * 0.1);

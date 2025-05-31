@@ -1,10 +1,11 @@
-// js/core/GameTime.js - Système de gestion du temps de jeu
+// js/core/GameTime.js - Système de gestion du temps de jeu (VERSION CORRIGÉE)
 
 // Import des dépendances
 import { eventSystem, GameEvents } from './EventSystem.js';
 
 /**
  * Gestionnaire du temps de jeu avec support de pause et vitesses variables
+ * VERSION CORRIGÉE POUR ÉVITER LES CRASHES
  */
 class GameTime {
     constructor() {
@@ -36,6 +37,11 @@ class GameTime {
         this.updateCallbacks = [];
         this.tickCallbacks = [];
         
+        // Variables pour éviter les crashes
+        this.isRunning = false;
+        this.animationFrameId = null;
+        this.maxDeltaTime = 100; // Limite le deltaTime à 100ms pour éviter les spirales
+        
         // Métriques de performance
         this.performanceMetrics = {
             lowFpsThreshold: 30,
@@ -45,7 +51,6 @@ class GameTime {
         };
         
         this.setupEventListeners();
-        this.start();
     }
 
     /**
@@ -60,34 +65,86 @@ class GameTime {
     }
 
     /**
-     * Démarre la boucle de temps
+     * Démarre la boucle de temps de manière sécurisée
      */
     start() {
+        if (this.isRunning) {
+            console.warn('GameTime déjà en cours d\'exécution');
+            return;
+        }
+
+        console.log('🕒 Démarrage de GameTime');
+        this.isRunning = true;
         this.lastFrameTime = performance.now();
         this.fpsUpdateTime = this.lastFrameTime;
         this.lastTickTime = this.lastFrameTime;
+        this.tickAccumulator = 0;
+        
         this.requestNextFrame();
     }
 
     /**
-     * Demande la prochaine frame
+     * Arrête la boucle de temps
      */
-    requestNextFrame() {
-        requestAnimationFrame((timestamp) => this.update(timestamp));
+    stop() {
+        console.log('🕒 Arrêt de GameTime');
+        this.isRunning = false;
+        
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
     }
 
     /**
-     * Met à jour le temps de jeu
+     * Demande la prochaine frame de manière sécurisée
+     */
+    requestNextFrame() {
+        if (!this.isRunning) {
+            return;
+        }
+
+        this.animationFrameId = requestAnimationFrame((timestamp) => {
+            try {
+                this.update(timestamp);
+            } catch (error) {
+                console.error('❌ Erreur dans GameTime.update:', error);
+                // En cas d'erreur, essayer de continuer
+                this.requestNextFrame();
+            }
+        });
+    }
+
+    /**
+     * Met à jour le temps de jeu avec protection contre les crashes
      * @param {number} timestamp - Timestamp de la frame actuelle
      */
     update(timestamp) {
-        // Calculer les deltas
-        const realDelta = timestamp - this.lastFrameTime;
+        if (!this.isRunning) {
+            return;
+        }
+
+        // Calculer le delta temps réel
+        let realDelta = timestamp - this.lastFrameTime;
         this.lastFrameTime = timestamp;
+        
+        // PROTECTION CRITIQUE: Limiter le deltaTime pour éviter les spirales de mort
+        if (realDelta > this.maxDeltaTime) {
+            console.warn(`⚠️ Delta temps trop élevé: ${realDelta}ms, limitation à ${this.maxDeltaTime}ms`);
+            realDelta = this.maxDeltaTime;
+        }
+
+        // Ignorer les delta négatifs ou aberrants
+        if (realDelta < 0 || realDelta > 5000) {
+            console.warn(`⚠️ Delta temps aberrant: ${realDelta}ms, ignoré`);
+            this.requestNextFrame();
+            return;
+        }
         
         // Mettre à jour les métriques
         this.updatePerformanceMetrics(realDelta);
         
+        // Calculer le delta de jeu selon l'état de pause
         if (!this.isPaused) {
             // Calculer le delta de jeu avec la vitesse
             this.deltaTime = realDelta * this.speed;
@@ -96,15 +153,25 @@ class GameTime {
             // Système de ticks à fréquence fixe
             this.tickAccumulator += realDelta;
             
-            while (this.tickAccumulator >= this.tickInterval) {
+            // Éviter l'accumulation excessive de ticks
+            let ticksProcessed = 0;
+            const maxTicksPerFrame = 10; // Limite pour éviter les blocages
+            
+            while (this.tickAccumulator >= this.tickInterval && ticksProcessed < maxTicksPerFrame) {
                 this.processTick();
                 this.tickAccumulator -= this.tickInterval;
+                ticksProcessed++;
+            }
+            
+            // Si on a trop de ticks en retard, les abandonner
+            if (ticksProcessed >= maxTicksPerFrame) {
+                console.warn('⚠️ Trop de ticks en retard, abandon du surplus');
+                this.tickAccumulator = 0;
             }
         }
         
-        // Appeler les callbacks de mise à jour MÊME en pause
-        // pour permettre au jeu de continuer à rendre l'interface
-        // Si le jeu est en pause, on passe 0 comme deltaTime pour éviter les animations
+        // Appeler les callbacks de mise à jour
+        // En pause, on passe 0 comme deltaTime mais on continue le rendu
         const updateDelta = this.isPaused ? 0 : this.deltaTime;
         this.processUpdateCallbacks(updateDelta);
         
@@ -122,14 +189,17 @@ class GameTime {
      * Traite un tick de jeu (logique à fréquence fixe)
      */
     processTick() {
+        if (this.isPaused) return;
+        
         const tickDelta = this.tickInterval * this.speed;
         
-        // Appeler tous les callbacks de tick
-        this.tickCallbacks.forEach(callback => {
+        // Appeler tous les callbacks de tick avec protection d'erreur
+        this.tickCallbacks.forEach((callback, index) => {
             try {
                 callback(tickDelta);
             } catch (error) {
-                console.error('Erreur dans callback de tick:', error);
+                console.error(`❌ Erreur dans callback de tick ${index}:`, error);
+                // Ne pas supprimer le callback, juste continuer
             }
         });
     }
@@ -139,11 +209,12 @@ class GameTime {
      * @param {number} deltaTime - Delta time en millisecondes
      */
     processUpdateCallbacks(deltaTime) {
-        this.updateCallbacks.forEach(callback => {
+        this.updateCallbacks.forEach((callback, index) => {
             try {
                 callback(deltaTime);
             } catch (error) {
-                console.error('Erreur dans callback de mise à jour:', error);
+                console.error(`❌ Erreur dans callback de mise à jour ${index}:`, error);
+                // Ne pas supprimer le callback, juste continuer
             }
         });
     }
@@ -186,10 +257,11 @@ class GameTime {
     }
 
     /**
-     * Met le jeu en pause
+     * Met le jeu en pause de manière sécurisée
      */
     pause() {
         if (!this.isPaused) {
+            console.log('⏸️ GameTime mis en pause');
             this.isPaused = true;
             eventSystem.emit(GameEvents.GAME_PAUSE, {
                 timestamp: this.currentTime
@@ -198,15 +270,20 @@ class GameTime {
     }
 
     /**
-     * Reprend le jeu
+     * Reprend le jeu de manière sécurisée
      */
     resume() {
         if (this.isPaused) {
+            console.log('▶️ GameTime repris');
             this.isPaused = false;
-            // Réajuster les temps pour éviter un gros saut
-            this.lastFrameTime = performance.now();
-            this.lastTickTime = this.lastFrameTime;
+            
+            // CRITIQUE: Réinitialiser les temps pour éviter un gros saut
+            const now = performance.now();
+            this.lastFrameTime = now;
+            this.lastTickTime = now;
             this.tickAccumulator = 0;
+            this.fpsUpdateTime = now;
+            this.frameCount = 0;
             
             eventSystem.emit(GameEvents.GAME_RESUME, {
                 timestamp: this.currentTime
@@ -226,33 +303,51 @@ class GameTime {
     }
 
     /**
-     * Définit la vitesse du jeu
+     * Définit la vitesse du jeu de manière sécurisée
      * @param {number} speed - Nouvelle vitesse (0 = pause, 1 = normal, etc.)
      */
     setSpeed(speed) {
-        // Valider la vitesse
-        if (speed < 0 || speed > this.maxSpeed) {
-            console.warn(`Vitesse invalide: ${speed}. Utilisation des limites 0-${this.maxSpeed}`);
-            speed = Math.max(0, Math.min(speed, this.maxSpeed));
-        }
-
-        const oldSpeed = this.speed;
-        
-        if (speed === 0) {
-            this.pause();
-        } else {
-            if (this.isPaused) {
-                this.resume();
+        try {
+            console.log(`🎮 setSpeed appelé avec: ${speed}`);
+            
+            // Valider la vitesse
+            if (speed < 0 || speed > this.maxSpeed) {
+                console.warn(`Vitesse invalide: ${speed}. Utilisation des limites 0-${this.maxSpeed}`);
+                speed = Math.max(0, Math.min(speed, this.maxSpeed));
             }
-            this.speed = speed;
-        }
 
-        if (oldSpeed !== this.speed || (speed > 0 && this.isPaused)) {
-            eventSystem.emit(GameEvents.GAME_SPEED_CHANGE, {
-                oldSpeed,
-                newSpeed: this.speed,
-                timestamp: this.currentTime
-            });
+            const oldSpeed = this.speed;
+            const wasPaused = this.isPaused;
+            
+            if (speed === 0) {
+                this.pause();
+            } else {
+                // Définir la nouvelle vitesse avant de reprendre
+                this.speed = speed;
+                
+                if (this.isPaused) {
+                    this.resume();
+                }
+            }
+
+            // Émettre l'événement de changement
+            if (oldSpeed !== this.speed || wasPaused !== this.isPaused) {
+                eventSystem.emit(GameEvents.GAME_SPEED_CHANGE, {
+                    oldSpeed,
+                    newSpeed: this.speed,
+                    wasPaused,
+                    isPaused: this.isPaused,
+                    timestamp: this.currentTime
+                });
+            }
+
+            console.log(`✅ Vitesse changée: ${oldSpeed} -> ${this.speed}, pause: ${wasPaused} -> ${this.isPaused}`);
+            
+        } catch (error) {
+            console.error('❌ Erreur dans setSpeed:', error);
+            // Fallback sécurisé
+            this.speed = 1;
+            this.isPaused = false;
         }
     }
 
@@ -277,41 +372,35 @@ class GameTime {
     /**
      * Ajoute un callback de mise à jour (appelé chaque frame)
      * @param {Function} callback - Fonction à appeler
-     * @returns {number} - ID du callback pour le supprimer
+     * @returns {Function} - Fonction pour supprimer le callback
      */
     addUpdateCallback(callback) {
         this.updateCallbacks.push(callback);
-        return this.updateCallbacks.length - 1;
+        
+        // Retourner une fonction pour supprimer le callback
+        return () => {
+            const index = this.updateCallbacks.indexOf(callback);
+            if (index !== -1) {
+                this.updateCallbacks.splice(index, 1);
+            }
+        };
     }
 
     /**
      * Ajoute un callback de tick (appelé à fréquence fixe)
      * @param {Function} callback - Fonction à appeler
-     * @returns {number} - ID du callback pour le supprimer
+     * @returns {Function} - Fonction pour supprimer le callback
      */
     addTickCallback(callback) {
         this.tickCallbacks.push(callback);
-        return this.tickCallbacks.length - 1;
-    }
-
-    /**
-     * Supprime un callback de mise à jour
-     * @param {number} id - ID du callback
-     */
-    removeUpdateCallback(id) {
-        if (id >= 0 && id < this.updateCallbacks.length) {
-            this.updateCallbacks.splice(id, 1);
-        }
-    }
-
-    /**
-     * Supprime un callback de tick
-     * @param {number} id - ID du callback
-     */
-    removeTickCallback(id) {
-        if (id >= 0 && id < this.tickCallbacks.length) {
-            this.tickCallbacks.splice(id, 1);
-        }
+        
+        // Retourner une fonction pour supprimer le callback
+        return () => {
+            const index = this.tickCallbacks.indexOf(callback);
+            if (index !== -1) {
+                this.tickCallbacks.splice(index, 1);
+            }
+        };
     }
 
     /**
@@ -333,127 +422,6 @@ class GameTime {
         }
         
         return formatted;
-    }
-
-    /**
-     * Obtient le temps réel formaté
-     * @returns {string}
-     */
-    getFormattedRealTime() {
-        const totalSeconds = Math.floor(this.realTime / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    /**
-     * Calcule le temps de jeu en années/mois/jours simulés
-     * @param {number} timeScale - Échelle de temps (ex: 1 seconde réelle = 1 jour de jeu)
-     * @returns {Object}
-     */
-    getGameDate(timeScale = 86400) { // 1 jour par seconde par défaut
-        const gameSeconds = this.currentTime / 1000;
-        const gameDays = gameSeconds / timeScale;
-        
-        const years = Math.floor(gameDays / 365);
-        const months = Math.floor((gameDays % 365) / 30);
-        const days = Math.floor(gameDays % 30);
-        
-        return {
-            years,
-            months,
-            days,
-            totalDays: Math.floor(gameDays),
-            season: this.getSeason(gameDays)
-        };
-    }
-
-    /**
-     * Détermine la saison basée sur les jours de jeu
-     * @param {number} totalDays - Jours totaux
-     * @returns {string}
-     */
-    getSeason(totalDays) {
-        const dayInYear = totalDays % 365;
-        
-        if (dayInYear < 91) return 'Hiver';
-        if (dayInYear < 182) return 'Printemps';
-        if (dayInYear < 273) return 'Été';
-        return 'Automne';
-    }
-
-    /**
-     * Crée un timer qui se déclenche après un délai
-     * @param {Function} callback - Fonction à appeler
-     * @param {number} delay - Délai en millisecondes de jeu
-     * @returns {Object} - Timer avec méthodes cancel()
-     */
-    setTimeout(callback, delay) {
-        const targetTime = this.currentTime + delay;
-        let cancelled = false;
-        
-        const checkTimer = () => {
-            if (cancelled) return;
-            
-            if (this.currentTime >= targetTime) {
-                callback();
-            } else {
-                requestAnimationFrame(checkTimer);
-            }
-        };
-        
-        requestAnimationFrame(checkTimer);
-        
-        return {
-            cancel: () => { cancelled = true; }
-        };
-    }
-
-    /**
-     * Crée un interval qui se répète
-     * @param {Function} callback - Fonction à appeler
-     * @param {number} interval - Intervalle en millisecondes de jeu
-     * @returns {Object} - Interval avec méthodes cancel()
-     */
-    setInterval(callback, interval) {
-        let lastTrigger = this.currentTime;
-        let cancelled = false;
-        
-        const checkInterval = () => {
-            if (cancelled) return;
-            
-            if (this.currentTime - lastTrigger >= interval) {
-                callback();
-                lastTrigger = this.currentTime;
-            }
-            
-            requestAnimationFrame(checkInterval);
-        };
-        
-        requestAnimationFrame(checkInterval);
-        
-        return {
-            cancel: () => { cancelled = true; }
-        };
-    }
-
-    /**
-     * Obtient les statistiques de performance
-     * @returns {Object}
-     */
-    getPerformanceStats() {
-        return {
-            fps: this.fps,
-            averageDeltaTime: Math.round(this.averageDeltaTime * 100) / 100,
-            speed: this.speed,
-            isPaused: this.isPaused,
-            currentTime: this.currentTime,
-            realTime: this.realTime,
-            tickRate: this.tickRate,
-            warningCount: this.performanceMetrics.warningCount
-        };
     }
 
     /**
@@ -488,6 +456,8 @@ class GameTime {
      * Remet à zéro le temps de jeu
      */
     reset() {
+        console.log('🔄 Reset de GameTime');
+        
         this.currentTime = 0;
         this.realTime = 0;
         this.deltaTime = 0;
@@ -498,23 +468,21 @@ class GameTime {
         this.isPaused = false;
         this.frameCount = 0;
         this.performanceMetrics.warningCount = 0;
+        
+        // Redémarrer si nécessaire
+        if (!this.isRunning) {
+            this.start();
+        }
     }
 
     /**
-     * Débuggage: affiche les informations de temps
+     * Nettoyage lors de la destruction
      */
-    debug() {
-        console.group('GameTime - Informations de temps');
-        console.log(`Temps de jeu: ${this.getFormattedTime(true)}`);
-        console.log(`Temps réel: ${this.getFormattedRealTime()}`);
-        console.log(`Vitesse: ${this.speed}x (${this.isPaused ? 'EN PAUSE' : 'ACTIF'})`);
-        console.log(`FPS: ${this.fps} (Delta moyen: ${this.averageDeltaTime.toFixed(2)}ms)`);
-        console.log(`Callbacks: ${this.updateCallbacks.length} mise à jour, ${this.tickCallbacks.length} tick`);
-        
-        const gameDate = this.getGameDate();
-        console.log(`Date de jeu: Année ${gameDate.years}, ${gameDate.season} (${gameDate.totalDays} jours)`);
-        
-        console.groupEnd();
+    destroy() {
+        console.log('🧹 Destruction de GameTime');
+        this.stop();
+        this.updateCallbacks = [];
+        this.tickCallbacks = [];
     }
 }
 
