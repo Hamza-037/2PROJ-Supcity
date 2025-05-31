@@ -1,4 +1,4 @@
-// js/systems/ - Systèmes de base pour SupCity1
+// js/systems/ProductionSystem.js - Systèmes de base pour SupCity1
 
 // === CAMÉRA ===
 class Camera {
@@ -128,7 +128,6 @@ class ParticleSystem {
         this.maxParticles = max;
     }
 
-    // Effets prédéfinis
     createSmoke(x, y) {
         for (let i = 0; i < 3; i++) {
             this.createParticle(x + Math.random() * 10 - 5, y, {
@@ -285,23 +284,14 @@ class Renderer {
     }
 
     render() {
-        // Sauvegarder l'état du contexte
         this.ctx.save();
-        
-        // Appliquer la transformation de la caméra
         this.applyCamera();
-        
-        // Rendu par couches
         this.renderBackground();
         this.renderTerrain();
         this.renderBuildings();
         this.renderCitizens();
         this.renderEffects();
-        
-        // Restaurer l'état pour l'UI
         this.ctx.restore();
-        
-        // Rendu de l'interface (sans transformation caméra)
         this.renderUI();
         this.renderDebugInfo();
     }
@@ -314,7 +304,6 @@ class Renderer {
     }
 
     renderBackground() {
-        // Gradient de fond (ciel vers herbe)
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
         gradient.addColorStop(0, '#87CEEB');
         gradient.addColorStop(0.3, '#98FB98');
@@ -325,7 +314,6 @@ class Renderer {
     }
 
     renderTerrain() {
-        // Texture d'herbe simple
         this.ctx.fillStyle = 'rgba(34, 139, 34, 0.3)';
         for (let x = -200; x < this.canvas.width + 200; x += 25) {
             for (let y = 300; y < this.canvas.height + 200; y += 25) {
@@ -350,13 +338,11 @@ class Renderer {
         
         ctx.save();
         
-        // Ombre
         ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.beginPath();
         ctx.ellipse(x + 2, y + size/2 + 2, size/2, size/6, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // Bâtiment principal
         ctx.fillStyle = building.color || '#888888';
         
         switch (building.type) {
@@ -370,10 +356,8 @@ class Renderer {
                 this.renderBerryBush(building);
                 break;
             default:
-                // Bâtiment générique
                 ctx.fillRect(x - size/2, y - size/2, size, size);
                 
-                // Icône du bâtiment
                 if (building.icon) {
                     ctx.font = `${size/2}px Arial`;
                     ctx.textAlign = 'center';
@@ -382,17 +366,14 @@ class Renderer {
                 }
         }
         
-        // Indicateur de santé
         if (building.healthPoints < 100) {
             this.renderHealthBar(building);
         }
         
-        // Indicateur de travailleurs
         if (building.maxWorkers > 0) {
             this.renderWorkerIndicator(building);
         }
         
-        // Range en mode debug
         if (this.showDebugInfo && building.range > 0) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.setLineDash([5, 5]);
@@ -412,11 +393,9 @@ class Renderer {
         const size = building.size;
         const anim = building.animation;
         
-        // Base (bûches)
         ctx.fillStyle = '#654321';
         ctx.fillRect(x - size/3, y + size/4, size/1.5, size/6);
         
-        // Flammes animées
         for (let i = 0; i < 5; i++) {
             const flameX = x + (i - 2) * size/8;
             const flameHeight = size/2 + Math.sin(anim * 4 + i) * size/8;
@@ -428,7 +407,6 @@ class Renderer {
             ctx.fill();
         }
         
-        // Particules occasionnelles
         if (Math.random() < 0.1) {
             this.game.particleSystem.createSparks(x, y - size/2);
         }
@@ -440,11 +418,9 @@ class Renderer {
         const y = building.y;
         const size = building.size;
         
-        // Base
         ctx.fillStyle = '#8B4513';
         ctx.fillRect(x - size/2, y - size/4, size, size/2);
         
-        // Toit
         ctx.fillStyle = '#654321';
         ctx.beginPath();
         ctx.moveTo(x - size/1.5, y - size/4);
@@ -453,7 +429,6 @@ class Renderer {
         ctx.closePath();
         ctx.fill();
         
-        // Porte
         ctx.fillStyle = '#2F1B14';
         ctx.fillRect(x - size/8, y - size/8, size/4, size/3);
     }
@@ -465,13 +440,11 @@ class Renderer {
         const size = building.size;
         const anim = building.animation;
         
-        // Buisson principal
         ctx.fillStyle = '#228B22';
         ctx.beginPath();
         ctx.arc(x, y, size/2, 0, Math.PI * 2);
         ctx.fill();
         
-        // Baies
         ctx.fillStyle = '#8B0000';
         for (let i = 0; i < 8; i++) {
             const berryX = x + Math.cos(i * 0.8 + anim * 0.1) * size/4;
@@ -489,11 +462,9 @@ class Renderer {
         const width = building.size;
         const height = 4;
         
-        // Fond
         ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
         ctx.fillRect(x - width/2, y, width, height);
         
-        // Santé
         ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
         ctx.fillRect(x - width/2, y, width * (building.healthPoints / 100), height);
     }
@@ -527,28 +498,23 @@ class Renderer {
         
         ctx.save();
         
-        // Ombre
         ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.beginPath();
         ctx.ellipse(x, y + 6, 4, 2, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // Corps
         ctx.fillStyle = citizen.color?.cloth || '#4169E1';
         ctx.fillRect(x - 3, y - 2, 6, 8);
         
-        // Tête
         ctx.fillStyle = citizen.color?.skin || '#FDBCB4';
         ctx.beginPath();
         ctx.arc(x, y - 6, 4, 0, Math.PI * 2);
         ctx.fill();
         
-        // Yeux
         ctx.fillStyle = '#000';
         ctx.fillRect(x - 2, y - 7, 1, 1);
         ctx.fillRect(x + 1, y - 7, 1, 1);
         
-        // Indicateur d'état
         this.renderCitizenState(citizen);
         
         ctx.restore();
@@ -591,14 +557,12 @@ class Renderer {
     renderEffects() {
         this.game.particleSystem.render();
         
-        // Effets des bâtiments
         this.game.effects.forEach(effect => {
             this.renderEffect(effect);
         });
     }
 
     renderEffect(effect) {
-        // Rendu des effets personnalisés
         const ctx = this.ctx;
         
         switch (effect.type) {
@@ -629,8 +593,6 @@ class Renderer {
     }
 
     renderUI() {
-        // L'interface est gérée par le HTML/CSS
-        // Ici on pourrait ajouter des overlays canvas si nécessaire
     }
 
     renderDebugInfo() {
@@ -638,12 +600,10 @@ class Renderer {
         
         const ctx = this.ctx;
         
-        // Grille de pathfinding
         if (this.game.pathfindingSystem) {
             this.game.pathfindingSystem.debugDraw(ctx);
         }
         
-        // Informations de performance
         this.renderPerformanceInfo();
     }
 
@@ -672,89 +632,9 @@ class Renderer {
 }
 
 // Export des classes
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { 
-        ProductionSystem, 
-        TransportSystem, 
-        ResearchSystem, 
-        WeatherSystem, 
-        AIManager, 
-        Camera, 
-        ParticleSystem, 
-        Particle, 
-        Renderer 
-    };
-} else {
-    window.ProductionSystem = ProductionSystem;
-    window.TransportSystem = TransportSystem;
-    window.ResearchSystem = ResearchSystem;
-    window.WeatherSystem = WeatherSystem;
-    window.AIManager = AIManager;
-    window.Camera = Camera;
-    window.ParticleSystem = ParticleSystem;
-    window.Particle = Particle;
-    window.Renderer = Renderer;
-}
-    }
-
-    getWeatherEffect() {
-        return this.weatherTypes[this.currentWeather] || { productionMod: 1.0, happinessMod: 1.0 };
-    }
-}
-
-// === GESTIONNAIRE D'IA ===
-class AIManager {
-    constructor(game) {
-        this.game = game;
-        this.lastJobAssignment = 0;
-        this.lastNeedsCheck = 0;
-    }
-
-    update(deltaTime) {
-        const now = Date.now();
-        
-        // Assigner des emplois toutes les 5 secondes
-        if (now - this.lastJobAssignment > 5000) {
-            this.assignJobs();
-            this.lastJobAssignment = now;
-        }
-        
-        // Vérifier les besoins toutes les 3 secondes
-        if (now - this.lastNeedsCheck > 3000) {
-            this.checkCitizenNeeds();
-            this.lastNeedsCheck = now;
-        }
-    }
-
-    assignJobs() {
-        const unemployed = this.game.citizens.filter(c => !c.job);
-        const jobsAvailable = this.game.buildings.filter(b => b.needsWorkers());
-        
-        unemployed.forEach(citizen => {
-            const nearbyJobs = jobsAvailable.filter(building => 
-                citizen.getDistanceTo(building.x, building.y) < 200
-            );
-            
-            if (nearbyJobs.length > 0) {
-                const closestJob = nearbyJobs.reduce((closest, building) => {
-                    const distToCurrent = citizen.getDistanceTo(building.x, building.y);
-                    const distToClosest = citizen.getDistanceTo(closest.x, closest.y);
-                    return distToCurrent < distToClosest ? building : closest;
-                });
-                
-                citizen.assignJob(closestJob);
-            }
-        });
-    }
-
-    checkCitizenNeeds() {
-        this.game.citizens.forEach(citizen => {
-            // Priorité aux besoins critiques
-            if (citizen.needs.hunger < 30 || citizen.needs.thirst < 30) {
-                citizen.state = citizen.needs.hunger < citizen.needs.thirst ? 'seeking_food' : 'seeking_water';
-            }
-        });
-    }
-}
-
-// ===
+export {
+    Camera,
+    ParticleSystem,
+    Particle,
+    Renderer
+};
