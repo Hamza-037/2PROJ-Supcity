@@ -1,4 +1,4 @@
-// js/main.js - Point d'entrée principal de SupCity1
+// js/main.js - Point d'entrée principal de SupCity
 
 // Imports des modules
 import { EventSystem, GameEvents, eventSystem } from './core/EventSystem.js';
@@ -14,6 +14,7 @@ import { Camera, ParticleSystem, Particle, Renderer } from './systems/Production
 import { UIManager } from './ui/UIManager.js';
 import { NotificationSystem } from './ui/NotificationSystem.js';
 import { Game } from './Game.js';
+import { AudioManager } from './core/AudioManager.js';
 
 // Exposition des classes au scope global pour la compatibilité
 window.EventSystem = EventSystem;
@@ -36,7 +37,7 @@ window.Vehicle = Vehicle;
 window.Game = Game;
 
 /**
- * Gestionnaire principal de l'application SupCity1
+ * Gestionnaire principal de l'application SupCity
  * Gère l'initialisation, l'écran de chargement et le démarrage du jeu
  */
 class SupCityApp {
@@ -60,7 +61,7 @@ class SupCityApp {
      */
     async initializeApp() {
         try {
-            console.log('🚀 Démarrage de SupCity1...');
+            console.log('🚀 Démarrage de SupCity...');
             
             // Définir les étapes de chargement
             this.defineLoadingSteps();
@@ -656,7 +657,7 @@ class SupCityApp {
             // Démarrer les mises à jour d'interface
             this.updateBuildingsList();
             
-            console.log('🎮 SupCity1 est prêt !');
+            console.log('🎮 SupCity est prêt !');
         }, 500);
     }
 
@@ -667,8 +668,8 @@ class SupCityApp {
     showError(error) {
         this.loadingScreen.innerHTML = `
             <div class="loading-content">
-                <h1>❌ Erreur</h1>
-                <p>Impossible de démarrer SupCity1:</p>
+                <h1> Erreur</h1>
+                <p>Impossible de démarrer SupCity:</p>
                 <pre style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; font-size: 0.9em;">${error.message}</pre>
                 <button onclick="location.reload()" style="padding: 12px 24px; background: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em;">
                     Recharger la page
@@ -759,7 +760,7 @@ class SupCityApp {
         const modalBody = document.getElementById('modalBody');
         
         modalBody.innerHTML = `
-            <h2>❓ Aide - SupCity1</h2>
+            <h2>❓ Aide - SupCity</h2>
             
             <h3>🎯 Objectif</h3>
             <p>Développez votre civilisation depuis l'âge préhistorique jusqu'aux temps modernes !</p>
@@ -858,11 +859,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Gestion des erreurs globales
 window.addEventListener('error', (event) => {
-    console.error('❌ Erreur globale:', event.error);
+    console.error('Erreur globale:', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-    console.error('❌ Promesse rejetée:', event.reason);
+    console.error('Promesse rejetée:', event.reason);
 });
 
 // Export pour utilisation dans d'autres modules
@@ -871,3 +872,16 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
     window.SupCityApp = SupCityApp;
 }
+
+document.getElementById('toggleUI').addEventListener('click', () => {
+    document.getElementById('gameUI').classList.toggle('active');
+});
+
+const audioManager = new AudioManager();
+audioManager.loadSound('bgm', 'assets/audio/background.mp3');
+
+window.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('click', () => {
+        audioManager.playMusic('bgm');
+    }, { once: true });
+});

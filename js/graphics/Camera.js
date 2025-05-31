@@ -52,5 +52,4 @@ class Camera {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { Camera };
