@@ -77,5 +77,4 @@ class ResearchSystem {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { ResearchSystem };

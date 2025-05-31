@@ -6,6 +6,7 @@
 class AudioManager {
     constructor() {
         this.sounds = {};
+        this.music = null;
         this.musicVolume = 0.3;
         this.sfxVolume = 0.5;
         this.enabled = true;
@@ -31,11 +32,30 @@ class AudioManager {
         }
     }
 
+    playMusic(name) {
+        if (!this.enabled || !this.sounds[name]) return;
+        if (this.music) {
+            this.music.pause();
+            this.music = null;
+        }
+        try {
+            const audio = this.sounds[name].cloneNode();
+            audio.loop = true;
+            audio.volume = this.musicVolume;
+            audio.play().catch(e => console.warn("Erreur de lecture :", e));
+            this.music = audio;
+        } catch (e) {
+            console.warn("Erreur musique :", e);
+        }
+    }
+
     setVolume(type, volume) {
-        if (type === 'music') this.musicVolume = volume;
+        if (type === 'music') {
+            this.musicVolume = volume;
+            if (this.music) this.music.volume = volume;
+        }
         if (type === 'sfx') this.sfxVolume = volume;
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { AudioManager };

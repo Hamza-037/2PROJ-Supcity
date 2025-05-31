@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SupCity1 - Simulation de Civilisation</title>
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/ui.css">
-    <link rel="stylesheet" href="styles/animations.css">
+    <title>SupCity - Simulation de Civilisation</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="assets/styles/animations.css">
+    <link rel="stylesheet" href="assets/styles/ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
     <div id="loadingScreen">
         <div class="loading-content">
-            <h1>🏛️ SupCity1</h1>
+            <h1><i class="fas fa-landmark"></i> SupCity</h1>
             <div class="loading-bar">
                 <div class="loading-progress"></div>
             </div>
@@ -22,37 +23,38 @@
     <div id="gameContainer" style="display: none;">
         <div id="gameHeader">
             <div class="game-title">
-                <h1>🏛️ SupCity1</h1>
+                <h1><i class="fas fa-landmark"></i> SupCity</h1>
                 <span class="version">v1.0 - Ère Préhistorique</span>
             </div>
-            
+
             <div id="speedControl">
-                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause">⏸️</button>
+                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause"><i class="fas fa-pause"></i></button>
                 <button id="speed1Btn" class="speed-btn tooltip active" data-tooltip="Vitesse normale">1x</button>
                 <button id="speed2Btn" class="speed-btn tooltip" data-tooltip="Vitesse rapide">2x</button>
                 <button id="speed4Btn" class="speed-btn tooltip" data-tooltip="Vitesse très rapide">4x</button>
             </div>
 
             <div class="main-controls">
-                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder">💾</button>
-                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger">📁</button>
-                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu">🔄</button>
-                <button id="settingsBtn" class="control-btn tooltip" data-tooltip="Paramètres">⚙️</button>
-                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide">❓</button>
+                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder"><i class="fas fa-save"></i></button>
+                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger"><i class="fas fa-folder-open"></i></button>
+                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu"><i class="fas fa-redo"></i></button>
+                <button id="settingsBtn" class="control-btn tooltip" data-tooltip="Paramètres"><i class="fas fa-cog"></i></button>
+                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide"><i class="fas fa-question-circle"></i></button>
+                <button id="toggleUI" class="ui-toggle-btn">☰ Menu</button>
             </div>
         </div>
 
         <div id="gameMain">
             <div id="gameWorld">
                 <canvas id="gameCanvas" width="1200" height="800"></canvas>
-                
+
                 <div id="minimap">
                     <canvas id="minimapCanvas" width="150" height="100"></canvas>
                     <div class="minimap-title">Carte</div>
                 </div>
 
                 <div id="debugInfo" class="debug-panel">
-                    <div class="debug-title">🔧 Debug</div>
+                    <div class="debug-title"><i class="fas fa-wrench"></i> Debug</div>
                     <div id="debugContent">
                         FPS: <span id="fps">0</span><br>
                         Citoyens: <span id="citizenCount">0</span><br>
@@ -66,34 +68,34 @@
 
             <div id="gameUI">
                 <div class="ui-panel" id="resourcesPanel">
-                    <h3 class="panel-title">📊 Ressources</h3>
+                    <h3 class="panel-title"><i class="fas fa-chart-bar"></i> Ressources</h3>
                     <div class="resources-grid">
                         <div class="resource-item" data-resource="food">
-                            <span class="resource-icon">🥕</span>
+                            <span class="resource-icon"><i class="fas fa-carrot"></i></span>
                             <span class="resource-name">Nourriture</span>
                             <span class="resource-value" id="food">0</span>
                             <span class="resource-trend" id="foodTrend">+0/min</span>
                         </div>
                         <div class="resource-item" data-resource="wood">
-                            <span class="resource-icon">🪵</span>
+                            <span class="resource-icon"><i class="fas fa-tree"></i></span>
                             <span class="resource-name">Bois</span>
                             <span class="resource-value" id="wood">0</span>
                             <span class="resource-trend" id="woodTrend">+0/min</span>
                         </div>
                         <div class="resource-item" data-resource="stone">
-                            <span class="resource-icon">🪨</span>
+                            <span class="resource-icon"><i class="fas fa-gem"></i></span>
                             <span class="resource-name">Pierre</span>
                             <span class="resource-value" id="stone">0</span>
                             <span class="resource-trend" id="stoneTrend">+0/min</span>
                         </div>
                         <div class="resource-item" data-resource="water">
-                            <span class="resource-icon">💧</span>
+                            <span class="resource-icon"><i class="fas fa-tint"></i></span>
                             <span class="resource-name">Eau</span>
                             <span class="resource-value" id="water">0</span>
                             <span class="resource-trend" id="waterTrend">+0/min</span>
                         </div>
                         <div class="resource-item" data-resource="research">
-                            <span class="resource-icon">🔬</span>
+                            <span class="resource-icon"><i class="fas fa-microscope"></i></span>
                             <span class="resource-name">Recherche</span>
                             <span class="resource-value" id="research">0</span>
                             <span class="resource-trend" id="researchTrend">+0/min</span>
@@ -102,7 +104,7 @@
                 </div>
 
                 <div class="ui-panel" id="populationPanel">
-                    <h3 class="panel-title">👥 Population</h3>
+                    <h3 class="panel-title"><i class="fas fa-users"></i> Population</h3>
                     <div class="population-stats">
                         <div class="stat-item">
                             <span class="stat-label">Total:</span>
@@ -127,20 +129,20 @@
                 </div>
 
                 <div class="ui-tabs">
-                    <button class="tab-btn active" data-tab="construction">🏗️ Construction</button>
-                    <button class="tab-btn" data-tab="research">🔬 Recherche</button>
-                    <button class="tab-btn" data-tab="statistics">📈 Statistiques</button>
-                    <button class="tab-btn" data-tab="settings">⚙️ Paramètres</button>
+                    <button class="tab-btn active" data-tab="construction"><i class="fas fa-tools"></i> Construction</button>
+                    <button class="tab-btn" data-tab="research"><i class="fas fa-microscope"></i> Recherche</button>
+                    <button class="tab-btn" data-tab="statistics"><i class="fas fa-chart-line"></i> Statistiques</button>
+                    <button class="tab-btn" data-tab="settings"><i class="fas fa-cog"></i> Paramètres</button>
                 </div>
 
                 <div class="tab-content active" id="constructionTab">
                     <div class="construction-categories">
-                        <button class="category-btn active" data-category="basic">🏠 Base</button>
-                        <button class="category-btn" data-category="production">🏭 Production</button>
-                        <button class="category-btn" data-category="infrastructure">🛤️ Infrastructure</button>
-                        <button class="category-btn" data-category="advanced">🏛️ Avancé</button>
+                        <button class="category-btn active" data-category="basic"><i class="fas fa-home"></i> Base</button>
+                        <button class="category-btn" data-category="production"><i class="fas fa-industry"></i> Production</button>
+                        <button class="category-btn" data-category="infrastructure"><i class="fas fa-road"></i> Infrastructure</button>
+                        <button class="category-btn" data-category="advanced"><i class="fas fa-landmark"></i> Avancé</button>
                     </div>
-                    
+
                     <div class="buildings-grid" id="buildingsGrid">
                     </div>
                 </div>
@@ -163,15 +165,15 @@
                 <div class="tab-content" id="settingsTab">
                     <div class="settings-grid">
                         <div class="setting-item">
-                            <label>🔊 Volume des effets:</label>
+                            <label><i class="fas fa-volume-up"></i> Volume des effets:</label>
                             <input type="range" id="sfxVolume" min="0" max="100" value="50">
                         </div>
                         <div class="setting-item">
-                            <label>🎵 Volume de la musique:</label>
+                            <label><i class="fas fa-music"></i> Volume de la musique:</label>
                             <input type="range" id="musicVolume" min="0" max="100" value="30">
                         </div>
                         <div class="setting-item">
-                            <label>🎨 Qualité graphique:</label>
+                            <label><i class="fas fa-palette"></i> Qualité graphique:</label>
                             <select id="graphicsQuality">
                                 <option value="low">Faible</option>
                                 <option value="medium" selected>Moyenne</option>
@@ -179,15 +181,15 @@
                             </select>
                         </div>
                         <div class="setting-item">
-                            <label>🐛 Mode debug:</label>
+                            <label><i class="fas fa-bug"></i> Mode debug:</label>
                             <input type="checkbox" id="debugMode">
                         </div>
                         <div class="setting-item">
-                            <label>📐 Afficher la grille:</label>
+                            <label><i class="fas fa-ruler-combined"></i> Afficher la grille:</label>
                             <input type="checkbox" id="showGrid">
                         </div>
                         <div class="setting-item">
-                            <label>🎯 Afficher les portées:</label>
+                            <label><i class="fas fa-bullseye"></i> Afficher les portées:</label>
                             <input type="checkbox" id="showRanges">
                         </div>
                     </div>
@@ -204,6 +206,18 @@
         </div>
     </div>
 
+    <script src="js/core/EventSystem.js"></script>
+    <script src="js/core/GameTime.js"></script>
+    <script src="js/core/ResourceManager.js"></script>
+    <script src="js/core/SaveSystem.js"></script>
+    <script src="js/data/BuildingData.js"></script>
+    <script src="js/entities/Building.js"></script>
+    <script src="js/entities/Citizen.js"></script>
+    <script src="js/systems/PathfindingSystem.js"></script>
+    <script src="js/systems/ProductionSystem.js"></script>
+    <script src="js/ui/UIManager.js"></script>
+    <script src="js/ui/NotificationSystem.js"></script>
+    <script src="js/Game.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
