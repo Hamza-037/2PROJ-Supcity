@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupCity1 - Simulation de Civilisation</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <style>
+        /* Styles intégrés pour un fichier unique */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #FF6B35;
+            --accent-color: #9C27B0;
+            --background-dark: #1a1a1a;
+            --background-medium: #2a2a2a;
+            --background-light: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-accent: #4CAF50;
+            --border-color: #555555;
+            --shadow: 0 4px 15px rgba(0,0,0,0.3);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--background-dark) 0%, var(--background-medium) 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #loadingScreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+
+        .loading-content { text-align: center; }
+        .loading-content h1 {
+            font-family: 'Orbitron', monospace; font-size: 3em; font-weight: 900;
+            margin-bottom: 2rem; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .loading-bar {
+            width: 300px; height: 6px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px; overflow: hidden; margin: 2rem auto;
+        }
+
+        .loading-progress {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 3px; animation: loadingProgress 3s ease;
+        }
+
+        @keyframes loadingProgress { from { width: 0%; } to { width: 100%; } }
+
+        #gameContainer {
+            width: 100vw; height: 100vh; display: flex; flex-direction: column;
+            background: var(--background-dark);
+        }
+
+        #gameHeader {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; background: linear-gradient(135deg, var(--background-medium) 0%, var(--background-light) 100%);
+            border-bottom: 2px solid var(--border-color); box-shadow: var(--shadow); z-index: 100;
+        }
+
+        .game-title h1 {
+            font-family: 'Orbitron', monospace; font-size: 1.8em; font-weight: 700;
+            color: var(--text-accent); text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .version { font-size: 0.8em; color: var(--text-secondary); margin-left: 1rem; }
+
+        #speedControl {
+            display: flex; gap: 5px; padding: 5px;
+            background: rgba(0,0,0,0.3); border-radius: var(--border-radius); backdrop-filter: blur(10px);
+        }
+
+        .speed-btn, .control-btn {
+            padding: 10px 15px; background: linear-gradient(135deg, var(--background-light) 0%, var(--background-medium) 100%);
+            color: var(--text-primary); border: 1px solid var(--border-color);
+            border-radius: var(--border-radius); cursor: pointer; font-size: 0.9em;
+            font-weight: 600; transition: var(--transition);
+        }
+
+        .speed-btn:hover, .control-btn:hover {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #45a049 100%);
+            transform: translateY(-2px); box-shadow: var(--shadow);
+        }
+
+        .speed-btn.active {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #F7931E 100%);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .main-controls { display: flex; gap: 10px; }
+
+        #gameMain { display: flex; flex: 1; overflow: hidden; }
+
+        #gameWorld {
+            flex: 1; position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 30%, #228B22 100%);
+        }
+
+        #gameCanvas {
+            display: block; cursor: crosshair; width: 100%; height: 100%; object-fit: contain;
+        }
+
+        #minimap {
+            position: absolute; top: 10px; right: 10px; width: 160px; height: 110px;
+            background: rgba(0,0,0,0.8); border: 2px solid var(--border-color);
+            border-radius: var(--border-radius); backdrop-filter: blur(10px); z-index: 50;
+        }
+
+        #minimapCanvas { width: 150px; height: 100px; display: block; margin: 5px auto 0; }
+        .minimap-title { text-align: center; font-size: 0.8em; color: var(--text-secondary); padding: 2px; }
+
+        .debug-panel {
+            position: absolute; top: 10px; left: 10px; padding: 10px 15px;
+            background: rgba(0,0,0,0.8); border: 1px solid var(--border-color);
+            border-radius: var(--border-radius); backdrop-filter: blur(10px);
+            font-family: 'Courier New', monospace; font-size: 0.9em; z-index: 50;
+        }
+
+        .debug-title { color: var(--text-accent); font-weight: bold; margin-bottom: 5px; }
+
+        #notifications {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; pointer-events: none;
+        }
+
+        .notification {
+            background: linear-gradient(135deg, var(--background-medium) 0%, var(--background-light) 100%);
+            color: var(--text-primary); padding: 12px 20px; margin: 5px 0;
+            border-radius: var(--border-radius); border-left: 4px solid var(--primary-color);
+            box-shadow: var(--shadow); animation: slideInDown 0.5s ease, fadeOut 0.5s ease 4.5s;
+            max-width: 400px; pointer-events: auto;
+        }
+
+        .notification.success { border-left-color: var(--primary-color); }
+        .notification.warning { border-left-color: #FFC107; }
+        .notification.error { border-left-color: #F44336; }
+
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        #gameUI {
+            width: 380px; background: linear-gradient(135deg, var(--background-medium) 0%, var(--background-dark) 100%);
+            border-left: 3px solid var(--border-color); overflow-y: auto; padding: 20px;
+            box-shadow: inset 5px 0 15px rgba(0,0,0,0.3);
+        }
+
+        .ui-panel {
+            background: linear-gradient(135deg, var(--background-light) 0%, var(--background-medium) 100%);
+            margin-bottom: 20px; padding: 15px; border-radius: var(--border-radius);
+            border: 1px solid var(--border-color); box-shadow: var(--shadow); transition: var(--transition);
+        }
+
+        .ui-panel:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+
+        .panel-title {
+            margin: 0 0 15px 0; color: var(--text-accent); font-size: 1.1em; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+            border-bottom: 2px solid var(--primary-color); padding-bottom: 8px;
+        }
+
+        .resources-grid { display: grid; gap: 8px; }
+
+        .resource-item {
+            display: grid; grid-template-columns: 30px 1fr auto auto; align-items: center; gap: 10px;
+            padding: 10px 12px; background: rgba(255,255,255,0.05); border-radius: var(--border-radius);
+            border: 1px solid transparent; transition: var(--transition);
+        }
+
+        .resource-item:hover { background: rgba(255,255,255,0.1); border-color: var(--primary-color); transform: translateX(5px); }
+        .resource-icon { font-size: 1.2em; text-align: center; }
+        .resource-name { font-size: 0.9em; font-weight: 500; }
+        .resource-value {
+            font-weight: 700; color: var(--text-accent); text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+            min-width: 50px; text-align: right;
+        }
+        .resource-trend { font-size: 0.8em; color: var(--text-secondary); min-width: 60px; text-align: right; }
+        .resource-trend.positive { color: var(--primary-color); }
+        .resource-trend.negative { color: #F44336; }
+
+        .population-stats { space-y: 8px; }
+        .stat-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-label { font-size: 0.9em; color: var(--text-secondary); }
+        .stat-value { font-weight: 700; color: var(--text-accent); }
+
+        .happiness-bar {
+            width: 100%; height: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; overflow: hidden; margin-top: 10px;
+        }
+        .happiness-fill {
+            height: 100%; background: linear-gradient(90deg, #F44336 0%, #FFC107 50%, var(--primary-color) 100%);
+            transition: width 0.5s ease; border-radius: 4px;
+        }
+
+        .ui-tabs {
+            display: flex; margin-bottom: 20px; background: var(--background-dark);
+            border-radius: var(--border-radius); padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1; padding: 12px 8px; background: transparent; color: var(--text-secondary);
+            border: none; border-radius: var(--border-radius); cursor: pointer;
+            font-size: 0.85em; font-weight: 600; text-align: center; transition: var(--transition);
+        }
+
+        .tab-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #45a049 100%);
+            color: white; box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .construction-categories {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px;
+        }
+
+        .category-btn {
+            padding: 10px 8px; background: linear-gradient(135deg, var(--background-light) 0%, var(--background-medium) 100%);
+            color: var(--text-secondary); border: 1px solid var(--border-color);
+            border-radius: var(--border-radius); cursor: pointer; font-size: 0.8em;
+            font-weight: 600; text-align: center; transition: var(--transition);
+        }
+
+        .category-btn:hover {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #45a049 100%);
+            color: white; transform: translateY(-2px);
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #F7931E 100%);
+            color: white; border-color: var(--secondary-color);
+        }
+
+        .buildings-grid { display: grid; gap: 10px; }
+
+        .building-btn {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 15px; background: linear-gradient(135deg, var(--background-light) 0%, var(--background-medium) 100%);
+            color: var(--text-primary); border: 1px solid var(--border-color);
+            border-radius: var(--border-radius); cursor: pointer; font-size: 0.9em;
+            font-weight: 500; transition: var(--transition); text-align: left;
+        }
+
+        .building-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #45a049 100%);
+            transform: translateY(-2px); box-shadow: var(--shadow);
+        }
+
+        .building-btn:disabled {
+            background: linear-gradient(135deg, #666 0%, #555 100%);
+            color: #999; cursor: not-allowed; opacity: 0.6;
+        }
+
+        .building-btn.active {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #F7931E 100%);
+            border-color: var(--secondary-color); box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .building-info { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
+        .building-name { font-weight: 600; margin-bottom: 2px; }
+        .building-cost { font-size: 0.8em; color: var(--text-secondary); font-weight: normal; }
+
+        .tooltip { position: relative; }
+        .tooltip:hover::after {
+            content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%;
+            transform: translateX(-50%); background: rgba(0,0,0,0.9); color: white;
+            padding: 6px 12px; border-radius: 4px; font-size: 0.8em;
+            white-space: nowrap; z-index: 1000; animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 10000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--background-medium) 0%, var(--background-light) 100%);
+            margin: auto; padding: 20px; border: 2px solid var(--border-color);
+            border-radius: var(--border-radius); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative;
+        }
+
+        .modal-close {
+            color: var(--text-secondary); float: right; font-size: 28px; font-weight: bold;
+            position: absolute; top: 10px; right: 15px; cursor: pointer; transition: var(--transition);
+        }
+
+        .modal-close:hover { color: var(--text-primary); transform: scale(1.1); }
+
+        .modal-body {
+            margin-top: 40px; color: var(--text-primary); line-height: 1.6;
+        }
+
+        .modal-body h2 {
+            color: var(--text-accent); margin-bottom: 15px; font-family: 'Orbitron', monospace;
+        }
+
+        .modal-body h3 { color: var(--primary-color); margin: 20px 0 10px 0; }
+        .modal-body p { margin-bottom: 10px; color: var(--text-secondary); }
+        .modal-body ul { margin-left: 20px; margin-bottom: 15px; }
+        .modal-body li { margin-bottom: 5px; color: var(--text-secondary); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--background-dark); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #45a049 100%);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #45a049 0%, var(--primary-color) 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <h1>🏛️ SupCity1</h1>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p>Chargement de votre civilisation...</p>
+        </div>
+    </div>
+
+    <div id="gameContainer" style="display: none;">
+        <div id="gameHeader">
+            <div class="game-title">
+                <h1>🏛️ SupCity1</h1>
+                <span class="version">v1.0 - Ère Préhistorique</span>
+            </div>
+            
+            <div id="speedControl">
+                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause">⏸️</button>
+                <button id="speed1Btn" class="speed-btn tooltip active" data-tooltip="Vitesse normale">1x</button>
+                <button id="speed2Btn" class="speed-btn tooltip" data-tooltip="Vitesse rapide">2x</button>
+                <button id="speed4Btn" class="speed-btn tooltip" data-tooltip="Vitesse très rapide">4x</button>
+            </div>
+
+            <div class="main-controls">
+                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder">💾</button>
+                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger">📁</button>
+                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu">🔄</button>
+                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide">❓</button>
+            </div>
+        </div>
+
+        <div id="gameMain">
+            <div id="gameWorld">
+                <canvas id="gameCanvas" width="1200" height="800"></canvas>
+                
+                <div id="minimap">
+                    <canvas id="minimapCanvas" width="150" height="100"></canvas>
+                    <div class="minimap-title">Carte</div>
+                </div>
+
+                <div id="debugInfo" class="debug-panel" style="display: none;">
+                    <div class="debug-title">🔧 Debug</div>
+                    <div id="debugContent">
+                        FPS: <span id="fps">0</span><br>
+                        Citoyens: <span id="citizenCount">0</span><br>
+                        Bâtiments: <span id="buildingCount">0</span><br>
+                        Temps: <span id="gameTime">0</span>s
+                    </div>
+                </div>
+
+                <div id="notifications"></div>
+            </div>
+
+            <div id="gameUI">
+                <div class="ui-panel" id="resourcesPanel">
+                    <h3 class="panel-title">📊 Ressources</h3>
+                    <div class="resources-grid">
+                        <div class="resource-item" data-resource="food">
+                            <span class="resource-icon">🥕</span>
+                            <span class="resource-name">Nourriture</span>
+                            <span class="resource-value" id="food">0</span>
+                            <span class="resource-trend" id="foodTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="wood">
+                            <span class="resource-icon">🪵</span>
+                            <span class="resource-name">Bois</span>
+                            <span class="resource-value" id="wood">0</span>
+                            <span class="resource-trend" id="woodTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="stone">
+                            <span class="resource-icon">🪨</span>
+                            <span class="resource-name">Pierre</span>
+                            <span class="resource-value" id="stone">0</span>
+                            <span class="resource-trend" id="stoneTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="water">
+                            <span class="resource-icon">💧</span>
+                            <span class="resource-name">Eau</span>
+                            <span class="resource-value" id="water">0</span>
+                            <span class="resource-trend" id="waterTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="research">
+                            <span class="resource-icon">🔬</span>
+                            <span class="resource-name">Recherche</span>
+                            <span class="resource-value" id="research">0</span>
+                            <span class="resource-trend" id="researchTrend">+0/min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui-panel" id="populationPanel">
+                    <h3 class="panel-title">👥 Population</h3>
+                    <div class="population-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value" id="totalPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Employés:</span>
+                            <span class="stat-value" id="employedPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Chômeurs:</span>
+                            <span class="stat-value" id="unemployedPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Bonheur:</span>
+                            <span class="stat-value" id="avgHappiness">100%</span>
+                        </div>
+                        <div class="happiness-bar">
+                            <div class="happiness-fill" id="happinessFill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui-tabs">
+                    <button class="tab-btn active" data-tab="construction">🏗️ Construction</button>
+                    <button class="tab-btn" data-tab="research">🔬 Recherche</button>
+                    <button class="tab-btn" data-tab="statistics">📈 Stats</button>
+                </div>
+
+                <div class="tab-content active" id="constructionTab">
+                    <div class="construction-categories">
+                        <button class="category-btn active" data-category="basic">🏠 Base</button>
+                        <button class="category-btn" data-category="production">🏭 Production</button>
+                        <button class="category-btn" data-category="research">🔬 Recherche</button>
+                        <button class="category-btn" data-category="advanced">🏛️ Avancé</button>
+                    </div>
+                    
+                    <div class="buildings-grid" id="buildingsGrid">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="researchTab">
+                    <div class="research-info">
+                        <p>🔬 Accumulez des points de recherche pour débloquer de nouvelles technologies!</p>
+                        <div id="availableResearch" style="margin-top: 15px;">
+                            <!-- Généré dynamiquement -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="statisticsTab">
+                    <div class="stats-info">
+                        <h4>📊 Statistiques de jeu</h4>
+                        <div id="gameStats" style="margin-top: 15px; font-size: 0.9em; line-height: 1.6;">
+                            <strong>🎮 Bienvenue dans SupCity1 !</strong><br><br>
+                            🔥 Commencez par placer un <strong>feu de camp</strong> pour attirer vos premiers citoyens.<br><br>
+                            💡 <em>Conseil :</em> Surveillez les besoins de vos citoyens !
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenu dynamique -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tous les scripts intégrés -->
+    <script>
+        // Inclusion de tous les scripts principaux dans un seul fichier pour simplicité
+        
+        // ====== EventSystem ======
+        class EventSystem {
+            constructor() {
+                this.listeners = new Map();
+                this.eventQueue = [];
+                this.isProcessing = false;
+            }
+
+            on(eventType, callback, context = null, priority = 0) {
+                if (!this.listeners.has(eventType)) {
+                    this.listeners.set(eventType, []);
+                }
+                const listener = { callback, context, priority, id: this.generateId() };
+                this.listeners.get(eventType).push(listener);
+                this.listeners.get(eventType).sort((a, b) => b.priority - a.priority);
+                return listener.id;
+            }
+
+            emit(eventType, data = null, immediate = false) {
+                const event = { type: eventType, data, timestamp: Date.now(), id: this.generateId() };
+                if (immediate) {
+                    this.processEvent(event);
+                } else {
+                    this.eventQueue.push(event);
+                }
+                return event.id;
+            }
+
+            processEvent(event) {
+                if (!this.listeners.has(event.type)) return;
+                const listeners = this.listeners.get(event.type);
+                for (const listener of listeners) {
+                    try {
+                        if (listener.context) {
+                            listener.callback.call(listener.context, event);
+                        } else {
+                            listener.callback(event);
+                        }
+                    } catch (error) {
+                        console.error(`Erreur événement ${event.type}:`, error);
+                    }
+                }
+            }
+
+            processQueue() {
+                if (this.isProcessing || this.eventQueue.length === 0) return;
+                this.isProcessing = true;
+                while (this.eventQueue.length > 0) {
+                    const event = this.eventQueue.shift();
+                    this.processEvent(event);
+                }
+                this.isProcessing = false;
+            }
+
+            generateId() {
+                return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            }
+        }
+
+        const GameEvents = {
+            GAME_START: 'game:start',
+            GAME_PAUSE: 'game:pause',
+            GAME_RESUME: 'game:resume',
+            GAME_RESET: 'game:reset',
+            GAME_SAVE: 'game:save',
+            GAME_LOAD: 'game:load',
+            GAME_SPEED_CHANGE: 'game:speedChange',
+            RESOURCE_CHANGE: 'resource:change',
+            RESOURCE_DEPLETED: 'resource:depleted',
+            CITIZEN_SPAWNED: 'citizen:spawned',
+            CITIZEN_DIED: 'citizen:died',
+            CITIZEN_JOB_ASSIGNED: 'citizen:jobAssigned',
+            CITIZEN_JOB_LOST: 'citizen:jobLost',
+            BUILDING_PLACED: 'building:placed',
+            BUILDING_REMOVED: 'building:removed',
+            BUILDING_PRODUCTION: 'building:production',
+            RESEARCH_COMPLETED: 'research:completed',
+            UI_NOTIFICATION: 'ui:notification'
+        };
+
+        const eventSystem = new EventSystem();
+
+        // ====== GameConfig ======
+        const GameConfig = {
+            version: '1.0.0',
+            limits: { maxCitizens: 500, maxBuildings: 200 },
+            simulation: { targetFPS: 60, autosaveInterval: 300000, citizenSpawnRate: 0.003 },
+            graphics: { defaultCanvasWidth: 1200, defaultCanvasHeight: 800 },
+            resources: {
+                startingResources: { food: 10, wood: 5, stone: 3, water: 8, research: 0 },
+                initialCapacity: { food: 1000, wood: 1000, stone: 1000, water: 1000, research: 1000 }
+            },
+            citizens: {
+                maxAge: 80, baseSpeed: 0.8,
+                needsDecayRate: { hunger: 0.02, thirst: 0.03, sleep: 0.015, social: 0.01, safety: 0.005, comfort: 0.008 }
+            },
+            debug: { enabled: false }
+        };
+    </script>
+
+    <script src="js/core/EventSystem.js"></script>
+    <script src="js/core/ResourceManager.js"></script>
+    <script src="js/core/GameTime.js"></script>
+    <script src="js/core/SaveSystem.js"></script>
+    <script src="js/entities/Citizen.js"></script>
+    <script src="js/entities/Building.js"></script>
+    <script src="js/systems/PathfindingSystem.js"></script>
+    <script src="js/systems/BasicSystems.js"></script>
+    <script src="js/ui/UIManager.js"></script>
+    <script src="js/data/GameConfig.js"></script>
+    <script src="js/data/BuildingData.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupCity1 - Simulation de Civilisation</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <h1>🏛️ SupCity1</h1>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p>Chargement de votre civilisation...</p>
+        </div>
+    </div>
+
+    <div id="gameContainer" style="display: none;">
+        <!-- Interface de jeu principale -->
+        <div id="gameHeader">
+            <div class="game-title">
+                <h1>🏛️ SupCity1</h1>
+                <span class="version">v1.0 - Ère Préhistorique</span>
+            </div>
+            
+            <div id="speedControl">
+                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause">⏸️</button>
+                <button id="speed1Btn" class="speed-btn tooltip active" data-tooltip="Vitesse normale">1x</button>
+                <button id="speed2Btn" class="speed-btn tooltip" data-tooltip="Vitesse rapide">2x</button>
+                <button id="speed4Btn" class="speed-btn tooltip" data-tooltip="Vitesse très rapide">4x</button>
+            </div>
+
+            <div class="main-controls">
+                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder">💾</button>
+                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger">📁</button>
+                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu">🔄</button>
+                <button id="settingsBtn" class="control-btn tooltip" data-tooltip="Paramètres">⚙️</button>
+                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide">❓</button>
+            </div>
+        </div>
+
+        <div id="gameMain">
+            <!-- Zone de jeu principale -->
+            <div id="gameWorld">
+                <canvas id="gameCanvas" width="1200" height="800"></canvas>
+                
+                <!-- Minimap -->
+                <div id="minimap">
+                    <canvas id="minimapCanvas" width="150" height="100"></canvas>
+                    <div class="minimap-title">Carte</div>
+                </div>
+
+                <!-- Informations de debug -->
+                <div id="debugInfo" class="debug-panel">
+                    <div class="debug-title">🔧 Debug</div>
+                    <div id="debugContent">
+                        FPS: <span id="fps">0</span><br>
+                        Citoyens: <span id="citizenCount">0</span><br>
+                        Bâtiments: <span id="buildingCount">0</span><br>
+                        Tick: <span id="gameTime">0</span>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div id="notifications"></div>
+            </div>
+
+            <!-- Interface utilisateur -->
+            <div id="gameUI">
+                <!-- Ressources -->
+                <div class="ui-panel" id="resourcesPanel">
+                    <h3 class="panel-title">📊 Ressources</h3>
+                    <div class="resources-grid">
+                        <div class="resource-item" data-resource="food">
+                            <span class="resource-icon">🥕</span>
+                            <span class="resource-name">Nourriture</span>
+                            <span class="resource-value" id="food">0</span>
+                            <span class="resource-trend" id="foodTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="wood">
+                            <span class="resource-icon">🪵</span>
+                            <span class="resource-name">Bois</span>
+                            <span class="resource-value" id="wood">0</span>
+                            <span class="resource-trend" id="woodTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="stone">
+                            <span class="resource-icon">🪨</span>
+                            <span class="resource-name">Pierre</span>
+                            <span class="resource-value" id="stone">0</span>
+                            <span class="resource-trend" id="stoneTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="water">
+                            <span class="resource-icon">💧</span>
+                            <span class="resource-name">Eau</span>
+                            <span class="resource-value" id="water">0</span>
+                            <span class="resource-trend" id="waterTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="research">
+                            <span class="resource-icon">🔬</span>
+                            <span class="resource-name">Recherche</span>
+                            <span class="resource-value" id="research">0</span>
+                            <span class="resource-trend" id="researchTrend">+0/min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Population -->
+                <div class="ui-panel" id="populationPanel">
+                    <h3 class="panel-title">👥 Population</h3>
+                    <div class="population-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value" id="totalPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Employés:</span>
+                            <span class="stat-value" id="employedPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Chômeurs:</span>
+                            <span class="stat-value" id="unemployedPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Bonheur:</span>
+                            <span class="stat-value" id="avgHappiness">100%</span>
+                        </div>
+                        <div class="happiness-bar">
+                            <div class="happiness-fill" id="happinessFill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglets principaux -->
+                <div class="ui-tabs">
+                    <button class="tab-btn active" data-tab="construction">🏗️ Construction</button>
+                    <button class="tab-btn" data-tab="research">🔬 Recherche</button>
+                    <button class="tab-btn" data-tab="statistics">📈 Statistiques</button>
+                    <button class="tab-btn" data-tab="settings">⚙️ Paramètres</button>
+                </div>
+
+                <!-- Contenu des onglets -->
+                <div class="tab-content active" id="constructionTab">
+                    <div class="construction-categories">
+                        <button class="category-btn active" data-category="basic">🏠 Base</button>
+                        <button class="category-btn" data-category="production">🏭 Production</button>
+                        <button class="category-btn" data-category="infrastructure">🛤️ Infrastructure</button>
+                        <button class="category-btn" data-category="advanced">🏛️ Avancé</button>
+                    </div>
+                    
+                    <div class="buildings-grid" id="buildingsGrid">
+                        <!-- Les bâtiments seront générés dynamiquement -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="researchTab">
+                    <div class="research-tree" id="researchTree">
+                        <!-- L'arbre de recherche sera généré dynamiquement -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="statisticsTab">
+                    <div class="stats-dashboard">
+                        <div class="chart-container">
+                            <canvas id="resourceChart" width="300" height="200"></canvas>
+                        </div>
+                        <div class="detailed-stats" id="detailedStats">
+                            <!-- Statistiques détaillées -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="settingsTab">
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label>🔊 Volume des effets:</label>
+                            <input type="range" id="sfxVolume" min="0" max="100" value="50">
+                        </div>
+                        <div class="setting-item">
+                            <label>🎵 Volume de la musique:</label>
+                            <input type="range" id="musicVolume" min="0" max="100" value="30">
+                        </div>
+                        <div class="setting-item">
+                            <label>🎨 Qualité graphique:</label>
+                            <select id="graphicsQuality">
+                                <option value="low">Faible</option>
+                                <option value="medium" selected>Moyenne</option>
+                                <option value="high">Élevée</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>🐛 Mode debug:</label>
+                            <input type="checkbox" id="debugMode">
+                        </div>
+                        <div class="setting-item">
+                            <label>📐 Afficher la grille:</label>
+                            <input type="checkbox" id="showGrid">
+                        </div>
+                        <div class="setting-item">
+                            <label>🎯 Afficher les portées:</label>
+                            <input type="checkbox" id="showRanges">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenu dynamique -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/core/EventSystem.js"></script>
+    <script src="js/core/ResourceManager.js"></script>
+    <script src="js/core/GameTime.js"></script>
+    <script src="js/entities/Citizen.js"></script>
+    <script src="js/entities/Building.js"></script>
+    <script src="js/entities/Vehicle.js"></script>
+    <script src="js/systems/PathfindingSystem.js"></script>
+    <script src="js/systems/ProductionSystem.js"></script>
+    <script src="js/systems/TransportSystem.js"></script>
+    <script src="js/systems/ResearchSystem.js"></script>
+    <script src="js/ui/UIManager.js"></script>
+    <script src="js/ui/NotificationSystem.js"></script>
+    <script src="js/graphics/Renderer.js"></script>
+    <script src="js/graphics/Camera.js"></script>
+    <script src="js/data/BuildingData.js"></script>
+    <script src="js/data/ResearchData.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
