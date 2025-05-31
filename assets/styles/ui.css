@@ -9,6 +9,7 @@
     padding: 20px;
     box-shadow: inset 5px 0 15px rgba(0,0,0,0.3);
 }
+
 .ui-toggle-btn {
     position: fixed;
     top: 10px;
@@ -164,7 +165,6 @@
     border-radius: 4px;
 }
 
-/* Onglets */
 .ui-tabs {
     display: flex;
     margin-bottom: 20px;

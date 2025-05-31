@@ -2,7 +2,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap');
 
-/* Variables CSS */
 :root {
     --primary-color: #4CAF50;
     --secondary-color: #FF6B35;
@@ -19,7 +18,6 @@
     --transition: all 0.3s ease;
 }
 
-/* Reset et base */
 * {
     margin: 0;
     padding: 0;
@@ -34,7 +32,6 @@ body {
     user-select: none;
 }
 
-/* Écran de chargement */
 #loadingScreen {
     position: fixed;
     top: 0;
@@ -89,7 +86,6 @@ body {
     margin-top: 1rem;
 }
 
-/* Container principal */
 #gameContainer {
     width: 100vw;
     height: 100vh;
@@ -98,7 +94,6 @@ body {
     background: var(--background-dark);
 }
 
-/* Header du jeu */
 #gameHeader {
     display: flex;
     justify-content: space-between;
@@ -124,7 +119,6 @@ body {
     margin-left: 1rem;
 }
 
-/* Contrôles de vitesse */
 #speedControl {
     display: flex;
     gap: 5px;
