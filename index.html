@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SupCity1 - Simulation de Civilisation</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <h1>🏛️ SupCity1</h1>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p>Chargement de votre civilisation...</p>
+        </div>
+    </div>
+
+    <div id="gameContainer" style="display: none;">
+        <div id="gameHeader">
+            <div class="game-title">
+                <h1>🏛️ SupCity1</h1>
+                <span class="version">v1.0 - Ère Préhistorique</span>
+            </div>
+            
+            <div id="speedControl">
+                <button id="pauseBtn" class="speed-btn tooltip" data-tooltip="Pause">⏸️</button>
+                <button id="speed1Btn" class="speed-btn tooltip active" data-tooltip="Vitesse normale">1x</button>
+                <button id="speed2Btn" class="speed-btn tooltip" data-tooltip="Vitesse rapide">2x</button>
+                <button id="speed4Btn" class="speed-btn tooltip" data-tooltip="Vitesse très rapide">4x</button>
+            </div>
+
+            <div class="main-controls">
+                <button id="saveBtn" class="control-btn tooltip" data-tooltip="Sauvegarder">💾</button>
+                <button id="loadBtn" class="control-btn tooltip" data-tooltip="Charger">📁</button>
+                <button id="resetBtn" class="control-btn tooltip" data-tooltip="Nouveau jeu">🔄</button>
+                <button id="settingsBtn" class="control-btn tooltip" data-tooltip="Paramètres">⚙️</button>
+                <button id="helpBtn" class="control-btn tooltip" data-tooltip="Aide">❓</button>
+            </div>
+        </div>
+
+        <div id="gameMain">
+            <div id="gameWorld">
+                <canvas id="gameCanvas" width="1200" height="800"></canvas>
+                
+                <div id="minimap">
+                    <canvas id="minimapCanvas" width="150" height="100"></canvas>
+                    <div class="minimap-title">Carte</div>
+                </div>
+
+                <div id="debugInfo" class="debug-panel">
+                    <div class="debug-title">🔧 Debug</div>
+                    <div id="debugContent">
+                        FPS: <span id="fps">0</span><br>
+                        Citoyens: <span id="citizenCount">0</span><br>
+                        Bâtiments: <span id="buildingCount">0</span><br>
+                        Tick: <span id="gameTime">0</span>
+                    </div>
+                </div>
+
+                <div id="notifications"></div>
+            </div>
+
+            <div id="gameUI">
+                <div class="ui-panel" id="resourcesPanel">
+                    <h3 class="panel-title">📊 Ressources</h3>
+                    <div class="resources-grid">
+                        <div class="resource-item" data-resource="food">
+                            <span class="resource-icon">🥕</span>
+                            <span class="resource-name">Nourriture</span>
+                            <span class="resource-value" id="food">0</span>
+                            <span class="resource-trend" id="foodTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="wood">
+                            <span class="resource-icon">🪵</span>
+                            <span class="resource-name">Bois</span>
+                            <span class="resource-value" id="wood">0</span>
+                            <span class="resource-trend" id="woodTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="stone">
+                            <span class="resource-icon">🪨</span>
+                            <span class="resource-name">Pierre</span>
+                            <span class="resource-value" id="stone">0</span>
+                            <span class="resource-trend" id="stoneTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="water">
+                            <span class="resource-icon">💧</span>
+                            <span class="resource-name">Eau</span>
+                            <span class="resource-value" id="water">0</span>
+                            <span class="resource-trend" id="waterTrend">+0/min</span>
+                        </div>
+                        <div class="resource-item" data-resource="research">
+                            <span class="resource-icon">🔬</span>
+                            <span class="resource-name">Recherche</span>
+                            <span class="resource-value" id="research">0</span>
+                            <span class="resource-trend" id="researchTrend">+0/min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui-panel" id="populationPanel">
+                    <h3 class="panel-title">👥 Population</h3>
+                    <div class="population-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value" id="totalPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Employés:</span>
+                            <span class="stat-value" id="employedPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Chômeurs:</span>
+                            <span class="stat-value" id="unemployedPopulation">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Bonheur:</span>
+                            <span class="stat-value" id="avgHappiness">100%</span>
+                        </div>
+                        <div class="happiness-bar">
+                            <div class="happiness-fill" id="happinessFill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui-tabs">
+                    <button class="tab-btn active" data-tab="construction">🏗️ Construction</button>
+                    <button class="tab-btn" data-tab="research">🔬 Recherche</button>
+                    <button class="tab-btn" data-tab="statistics">📈 Statistiques</button>
+                    <button class="tab-btn" data-tab="settings">⚙️ Paramètres</button>
+                </div>
+
+                <div class="tab-content active" id="constructionTab">
+                    <div class="construction-categories">
+                        <button class="category-btn active" data-category="basic">🏠 Base</button>
+                        <button class="category-btn" data-category="production">🏭 Production</button>
+                        <button class="category-btn" data-category="infrastructure">🛤️ Infrastructure</button>
+                        <button class="category-btn" data-category="advanced">🏛️ Avancé</button>
+                    </div>
+                    
+                    <div class="buildings-grid" id="buildingsGrid">
+                    </div>
+                </div>
+
+                <div class="tab-content" id="researchTab">
+                    <div class="research-tree" id="researchTree">
+                    </div>
+                </div>
+
+                <div class="tab-content" id="statisticsTab">
+                    <div class="stats-dashboard">
+                        <div class="chart-container">
+                            <canvas id="resourceChart" width="300" height="200"></canvas>
+                        </div>
+                        <div class="detailed-stats" id="detailedStats">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="settingsTab">
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label>🔊 Volume des effets:</label>
+                            <input type="range" id="sfxVolume" min="0" max="100" value="50">
+                        </div>
+                        <div class="setting-item">
+                            <label>🎵 Volume de la musique:</label>
+                            <input type="range" id="musicVolume" min="0" max="100" value="30">
+                        </div>
+                        <div class="setting-item">
+                            <label>🎨 Qualité graphique:</label>
+                            <select id="graphicsQuality">
+                                <option value="low">Faible</option>
+                                <option value="medium" selected>Moyenne</option>
+                                <option value="high">Élevée</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>🐛 Mode debug:</label>
+                            <input type="checkbox" id="debugMode">
+                        </div>
+                        <div class="setting-item">
+                            <label>📐 Afficher la grille:</label>
+                            <input type="checkbox" id="showGrid">
+                        </div>
+                        <div class="setting-item">
+                            <label>🎯 Afficher les portées:</label>
+                            <input type="checkbox" id="showRanges">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
