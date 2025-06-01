@@ -37,5 +37,4 @@ class NotificationSystem {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { NotificationSystem };

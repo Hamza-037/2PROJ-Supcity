@@ -1,6 +1,5 @@
 // js/Game.js - Classe principale corrigée pour le spawn des citoyens
 
-// Imports des modules nécessaires
 import { EventSystem, GameEvents, eventSystem } from './core/EventSystem.js';
 import { GameTime } from './core/GameTime.js';
 import { ResourceManager } from './core/ResourceManager.js';

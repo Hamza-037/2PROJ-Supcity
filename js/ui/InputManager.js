@@ -69,3 +69,5 @@ if (typeof module !== 'undefined' && module.exports) {
     window.TooltipManager = TooltipManager;
     window.InputManager = InputManager;
 }
+
+export { InputManager };

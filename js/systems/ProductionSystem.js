@@ -631,7 +631,6 @@ class Renderer {
     }
 }
 
-// Export des classes
 export {
     Camera,
     ParticleSystem,

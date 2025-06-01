@@ -36,7 +36,7 @@ class ModalManager {
     }
 
     showHelp() {
-        this.show('❓ Aide - SupCity1', `
+        this.show('❓ Aide - SupCity', `
             <h3>🎯 Objectif</h3>
             <p>Développez votre civilisation depuis l'âge préhistorique !</p>
             

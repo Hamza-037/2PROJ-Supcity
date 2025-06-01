@@ -97,5 +97,4 @@ class ParticleSystem {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { ParticleSystem };

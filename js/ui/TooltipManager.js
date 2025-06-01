@@ -52,3 +52,5 @@ class TooltipManager {
         }
     }
 }
+
+export { TooltipManager };

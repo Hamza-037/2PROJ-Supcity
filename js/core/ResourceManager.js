@@ -450,5 +450,4 @@ class ResourceManager {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { ResourceManager };

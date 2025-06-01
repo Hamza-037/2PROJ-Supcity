@@ -590,5 +590,4 @@ class PathfindingSystem {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { PathfindingSystem };

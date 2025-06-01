@@ -125,5 +125,4 @@ class Renderer {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { Renderer };

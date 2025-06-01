@@ -737,8 +737,6 @@ class BuildingDataManager {
     }
 }
 
-// Instance globale
 const buildingDataManager = new BuildingDataManager();
 
-// Export pour utilisation dans d'autres modules
 export { BuildingDataManager, buildingDataManager };

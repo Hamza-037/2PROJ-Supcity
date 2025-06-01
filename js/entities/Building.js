@@ -793,5 +793,4 @@ class ResearchBuilding extends Building {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { Building, ProductionBuilding, ResidentialBuilding, ResearchBuilding };

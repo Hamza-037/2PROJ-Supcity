@@ -24,3 +24,5 @@ class TransportSystem {
         return route;
     }
 }
+
+export { TransportSystem };

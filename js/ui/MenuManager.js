@@ -249,5 +249,4 @@ Construisez, développez, prospérez !`);
     }
 }
 
-// Export pour utilisation
 export { MenuManager };

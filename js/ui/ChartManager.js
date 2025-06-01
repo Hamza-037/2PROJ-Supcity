@@ -61,3 +61,5 @@ class ChartManager {
         }
     }
 }
+
+export { ChartManager };

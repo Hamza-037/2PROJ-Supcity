@@ -323,8 +323,6 @@ const GameEvents = {
     PERFORMANCE_HIGH_MEMORY: 'performance:highMemory'
 };
 
-// Instance globale du système d'événements
 const eventSystem = new EventSystem();
 
-// Export pour utilisation dans d'autres modules
 export { EventSystem, GameEvents, eventSystem };

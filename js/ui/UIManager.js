@@ -169,5 +169,4 @@ class NotificationSystem {
     }
 }
 
-// Export
 export { UIManager };

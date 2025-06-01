@@ -323,8 +323,6 @@ class SaveSystem {
     }
 }
 
-// Instance globale
 const saveSystem = new SaveSystem();
 
-// Export
 export { SaveSystem, saveSystem };

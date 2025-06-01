@@ -259,15 +259,22 @@ class GameTime {
     /**
      * Met le jeu en pause de manière sécurisée
      */
-    pause() {
-        if (!this.isPaused) {
-            console.log('⏸️ GameTime mis en pause');
-            this.isPaused = true;
-            eventSystem.emit(GameEvents.GAME_PAUSE, {
-                timestamp: this.currentTime
-            });
+pause() {
+    if (!this.isPaused) {
+        console.log('⏸️ GameTime mis en pause');
+        this.isPaused = true;
+
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
         }
+
+        eventSystem.emit(GameEvents.GAME_PAUSE, {
+            timestamp: this.currentTime
+        });
     }
+}
+
 
     /**
      * Reprend le jeu de manière sécurisée
@@ -288,6 +295,8 @@ class GameTime {
             eventSystem.emit(GameEvents.GAME_RESUME, {
                 timestamp: this.currentTime
             });
+
+            this.requestNextFrame();
         }
     }
 
@@ -486,5 +495,4 @@ class GameTime {
     }
 }
 
-// Export pour utilisation dans d'autres modules
 export { GameTime };

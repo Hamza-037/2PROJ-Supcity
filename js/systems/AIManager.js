@@ -48,3 +48,5 @@ class AIManager {
         });
     }
 }
+
+export { AIManager };

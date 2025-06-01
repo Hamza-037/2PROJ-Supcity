@@ -109,8 +109,6 @@ function saveConfig() {
     localStorage.setItem('supcity_config', JSON.stringify(GameConfig));
 }
 
-// Charger la configuration au démarrage
 loadConfig();
 
-// Export avec ES6
 export { GameConfig, loadConfig, saveConfig };
