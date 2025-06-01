@@ -112,11 +112,13 @@
 /* BOUTONS DU MENU */
 .main-menu-buttons {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 20px;
-    min-width: 400px;
+    width: 100%;
+    max-width: 800px; /
     opacity: 0;
     animation: fadeInUp 1s ease-out 1.5s forwards;
+    justify-content: center; 
 }
 
 .menu-btn {
