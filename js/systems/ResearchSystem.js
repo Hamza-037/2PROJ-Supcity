@@ -1,5 +1,7 @@
 // js/systems/ResearchSystem.js - Système de recherche pour SupCity1
 
+import { eventSystem, GameEvents } from '../core/EventSystem.js';
+
 class ResearchSystem {
     constructor(game) {
         this.game = game;
