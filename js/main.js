@@ -17,26 +17,6 @@ import { Game } from './Game.js';
 import { AudioManager } from './core/AudioManager.js';
 import { MenuManager } from './ui/MenuManager.js';
 
-// Exposition des classes au scope global pour la compatibilité
-window.EventSystem = EventSystem;
-window.GameEvents = GameEvents;
-window.eventSystem = eventSystem;
-window.GameTime = GameTime;
-window.ResourceManager = ResourceManager;
-window.SaveSystem = SaveSystem;
-window.BuildingDataManager = BuildingDataManager;
-window.Building = Building;
-window.Citizen = Citizen;
-window.PathfindingSystem = PathfindingSystem;
-window.Camera = Camera;
-window.ParticleSystem = ParticleSystem;
-window.Particle = Particle;
-window.Renderer = Renderer;
-window.UIManager = UIManager;
-window.NotificationSystem = NotificationSystem;
-window.Vehicle = Vehicle;
-window.Game = Game;
-
 /**
  * Gestionnaire principal de l'application SupCity avec menu intégré
  */
@@ -75,7 +55,7 @@ class SupCityApp {
             await this.checkCompatibility();
 
             // Initialiser le gestionnaire de menu
-            this.menuManager = new MenuManager();
+            this.menuManager = new MenuManager(this);
 
             // Configurer les contrôles du jeu (préparés pour quand le jeu sera lancé)
             this.setupGameControls();
@@ -977,7 +957,7 @@ class SupCityApp {
 
 // Démarrage de l'application quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', () => {
-    window.supCityApp = new SupCityApp();
+    new SupCityApp();
 });
 
 // Gestion des erreurs globales
