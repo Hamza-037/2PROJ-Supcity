@@ -25,20 +25,5 @@ class EconomySystem {
     }
 }
 
-// Export de toutes les classes
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        AudioManager, Vehicle, Animal, Resource,
-        TransportSystem, ResearchSystem, WeatherSystem, AIManager, EconomySystem
-    };
-} else {
-    window.AudioManager = AudioManager;
-    window.Vehicle = Vehicle;
-    window.Animal = Animal;
-    window.Resource = Resource;
-    window.TransportSystem = TransportSystem;
-    window.ResearchSystem = ResearchSystem;
-    window.WeatherSystem = WeatherSystem;
-    window.AIManager = AIManager;
-    window.EconomySystem = EconomySystem;
 }
+export { EconomySystem };
