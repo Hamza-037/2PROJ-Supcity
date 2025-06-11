@@ -273,14 +273,18 @@ class SupCityApp {
      */
     async initializeSystems() {
         // Vérifier que tous les systèmes sont disponibles
-        const requiredClasses = [
-            'EventSystem', 'ResourceManager', 'GameTime',
-            'Citizen', 'Building', 'Game'
+        const classes = [
+            { cls: EventSystem, name: 'EventSystem' },
+            { cls: ResourceManager, name: 'ResourceManager' },
+            { cls: GameTime, name: 'GameTime' },
+            { cls: Citizen, name: 'Citizen' },
+            { cls: Building, name: 'Building' },
+            { cls: Game, name: 'Game' }
         ];
 
-        for (const className of requiredClasses) {
-            if (typeof window[className] === 'undefined') {
-                throw new Error(`Classe manquante: ${className}`);
+        for (const { cls, name } of classes) {
+            if (typeof cls === 'undefined') {
+                throw new Error(`Classe manquante: ${name}`);
             }
         }
 
