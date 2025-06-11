@@ -57,17 +57,5 @@ class InputManager {
     }
 }
 
-// Export de toutes les classes UI
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        NotificationSystem, ModalManager, ChartManager, TooltipManager, InputManager
-    };
-} else {
-    window.NotificationSystem = NotificationSystem;
-    window.ModalManager = ModalManager;
-    window.ChartManager = ChartManager;
-    window.TooltipManager = TooltipManager;
-    window.InputManager = InputManager;
-}
 
 export { InputManager };

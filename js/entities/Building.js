@@ -1,5 +1,8 @@
 // js/entities/Building.js - Classe représentant un bâtiment
 
+// Import du système d'événements
+import { eventSystem, GameEvents } from '../core/EventSystem.js';
+
 /**
  * Classe de base pour tous les bâtiments du jeu
  */

@@ -141,32 +141,5 @@ class UIManager {
     }
 }
 
-// Système de notifications simple
-class NotificationSystem {
-    constructor() {
-        this.container = document.getElementById('notifications');
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        eventSystem.on(GameEvents.UI_NOTIFICATION, (event) => {
-            this.show(event.data.message, event.data.type);
-        });
-    }
-
-    show(message, type = 'info') {
-        if (!this.container) return;
-
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        
-        this.container.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
-    }
-}
 
 export { UIManager };

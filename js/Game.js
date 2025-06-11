@@ -11,6 +11,10 @@ import { UIManager } from './ui/UIManager.js';
 import { NotificationSystem } from './ui/NotificationSystem.js';
 import { Building, ProductionBuilding, ResidentialBuilding, ResearchBuilding } from './entities/Building.js';
 import { Citizen } from './entities/Citizen.js';
+import { GameRenderer } from './managers/GameRenderer.js';
+import { GameStateManager } from './managers/GameStateManager.js';
+import { GameEventHandler } from './managers/GameEventHandler.js';
+import { GameDebugTools } from './managers/GameDebugTools.js';
 
 class Game {
     constructor() {
@@ -32,6 +36,10 @@ class Game {
         this.particleSystem = new ParticleSystem(this.ctx);
         this.uiManager = new UIManager(this);
         this.notificationSystem = new NotificationSystem();
+        this.renderer = new GameRenderer(this);
+        this.stateManager = new GameStateManager(this);
+        this.eventHandler = new GameEventHandler(this);
+        this.debugTools = new GameDebugTools(this);
 
         // Collections
         this.citizens = [];
@@ -77,7 +85,7 @@ class Game {
             console.log('🎮 Initialisation de SupCity1...');
 
             await this.uiManager.initialize();
-            this.setupEventListeners();
+            this.eventHandler.setupEventListeners();
             this.startGameLoops();
 
             // Configuration initiale
@@ -108,23 +116,12 @@ class Game {
         }
     }
 
-    setupEventListeners() {
-        this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
-        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-        eventSystem.on(GameEvents.CITIZEN_DIED, (e) => this.onCitizenDied(e));
-        eventSystem.on(GameEvents.BUILDING_PLACED, (e) => this.onBuildingPlaced(e));
-    }
-
     startGameLoops() {
-        console.log('🔄 Démarrage des boucles de jeu');
-        
         // Ajouter les callbacks avec gestion d'erreur
         this.gameTime.addUpdateCallback((deltaTime) => {
             try {
-                this.update(deltaTime);
-                this.render();
+                this.stateManager.update(deltaTime);
+                this.renderer.render();
             } catch (error) {
                 console.error('❌ Erreur dans update/render:', error);
             }
@@ -152,543 +149,60 @@ class Game {
     }
 
     update(deltaTime) {
-        // Vérifications de sécurité
-        if (!this.isRunning || !this.isInitialized) {
-            return;
-        }
-
-        // Éviter les deltaTime aberrants qui peuvent causer des crashes
-        if (deltaTime > 1000) { // Plus d'une seconde
-            console.warn(`⚠️ DeltaTime aberrant détecté: ${deltaTime}ms, limitation à 100ms`);
-            deltaTime = 100;
-        }
-
-        if (deltaTime < 0) {
-            console.warn(`⚠️ DeltaTime négatif détecté: ${deltaTime}ms, ignoré`);
-            return;
-        }
-
-        try {
-            // Mettre à jour les entités
-            this.updateCitizens(deltaTime);
-            this.updateBuildings(deltaTime);
-            
-            // Mettre à jour le système de particules (avec vérification)
-            if (this.particleSystem && this.particleSystem.update) {
-                this.particleSystem.update(deltaTime);
-            }
-
-            // Assigner des emplois (pas à chaque frame pour les performances)
-            if (Math.random() < 0.1) { // 10% de chance par frame
-                this.assignJobsToUnemployed();
-            }
-
-        } catch (error) {
-            console.error('❌ Erreur dans update():', error);
-            console.error('État du jeu:', {
-                isRunning: this.isRunning,
-                isInitialized: this.isInitialized,
-                speed: this.gameTime?.speed,
-                isPaused: this.gameTime?.isPaused,
-                citizenCount: this.citizens?.length,
-                buildingCount: this.buildings?.length
-            });
-            
-            // En cas d'erreur critique, on peut essayer de continuer
-            // mais on évite de planter complètement
-        }
+        this.stateManager.update(deltaTime);
     }
 
     fixedUpdate(deltaTime) {
-        try {
-            // Vérifications de sécurité
-            if (!this.isRunning || !this.isInitialized) {
-                return;
-            }
-
-            // Mettre à jour les systèmes principaux
-            if (this.resourceManager && this.resourceManager.update) {
-                this.resourceManager.update();
-            }
-
-            if (this.researchSystem && this.researchSystem.update) {
-                this.researchSystem.update(deltaTime);
-            }
-
-            // Vérifier l'équilibre du jeu (pas trop souvent)
-            if (this.gameTime.currentTime % 5000 < 100) { // Environ toutes les 5 secondes
-                this.checkGameBalance();
-            }
-
-            // Traiter la queue d'événements
-            if (eventSystem && eventSystem.processQueue) {
-                eventSystem.processQueue();
-            }
-
-        } catch (error) {
-            console.error('❌ Erreur dans fixedUpdate():', error);
-            // Ne pas planter le jeu, juste logger l'erreur
-        }
+        this.stateManager.fixedUpdate(deltaTime);
     }
 
     render() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Fond
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(0.3, '#98FB98');
-        gradient.addColorStop(1, '#228B22');
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Entités
-        this.buildings.forEach(building => this.renderBuilding(building));
-        this.citizens.forEach(citizen => this.renderCitizen(citizen));
-        this.particleSystem.render();
-
-        // Curseur de construction
-        if (this.selectedBuildingType) {
-            this.renderConstructionCursor();
-        }
+        this.renderer.render();
     }
 
     renderConstructionCursor() {
-        if (!this.selectedBuildingType) return;
-
-        const buildingData = this.buildingDataManager.getBuildingData(this.selectedBuildingType);
-        if (!buildingData) return;
-
-        const ctx = this.ctx;
-        const x = this.mouseX;
-        const y = this.mouseY;
-        const size = buildingData.size || 20;
-
-        ctx.save();
-
-        // Vérifier si l'emplacement est valide
-        const canBuild = !this.checkBuildingCollision(x, y, size);
-        const hasResources = this.buildingDataManager.canBuild(
-            this.selectedBuildingType,
-            this.resourceManager.getSummary(),
-            this.researchSystem.getUnlockedResearch()
-        ).canBuild;
-
-        // Couleur de l'indicateur selon la validité
-        const isValid = canBuild && hasResources;
-        const strokeColor = isValid ? '#00FF00' : '#FF0000';
-        const fillColor = isValid ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)';
-
-        // Zone de placement - Carré centré sur le curseur
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = fillColor;
-        ctx.fillRect(x - size / 2, y - size / 2, size, size);
-
-        // Contour de la zone de placement
-        ctx.globalAlpha = 0.8;
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 4]);
-        ctx.strokeRect(x - size / 2, y - size / 2, size, size);
-
-        // Cercle central pour le bâtiment
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = buildingData.color || '#888888';
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.arc(x, y, size / 2.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Contour du bâtiment
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Icône du bâtiment - parfaitement centrée
-        if (buildingData.icon) {
-            ctx.globalAlpha = 1;
-            ctx.font = `${Math.floor(size / 2.5)}px Arial`;
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 1;
-            
-            // Contour pour la lisibilité
-            ctx.strokeText(buildingData.icon, x, y);
-            ctx.fillText(buildingData.icon, x, y);
-        }
-
-        // Croix de centrage (optionnel - pour debug)
-        if (this.config.debugMode) {
-            ctx.globalAlpha = 0.5;
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([]);
-            
-            // Ligne horizontale
-            ctx.beginPath();
-            ctx.moveTo(x - 10, y);
-            ctx.lineTo(x + 10, y);
-            ctx.stroke();
-            
-            // Ligne verticale
-            ctx.beginPath();
-            ctx.moveTo(x, y - 10);
-            ctx.lineTo(x, y + 10);
-            ctx.stroke();
-        }
-
-        // Affichage du nom du bâtiment
-        ctx.globalAlpha = 0.9;
-        ctx.font = 'bold 12px Arial';
-        ctx.fillStyle = 'white';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 2;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        
-        const buildingName = buildingData.name || this.selectedBuildingType;
-        ctx.strokeText(buildingName, x, y + size / 2 + 10);
-        ctx.fillText(buildingName, x, y + size / 2 + 10);
-
-        // Affichage du coût si pas assez de ressources
-        if (!hasResources) {
-            ctx.font = 'bold 10px Arial';
-            ctx.fillStyle = '#FF6666';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            
-            const costText = this.buildingDataManager.getFormattedCost(this.selectedBuildingType);
-            if (costText) {
-                ctx.strokeText(`Coût: ${costText}`, x, y + size / 2 + 25);
-                ctx.fillText(`Coût: ${costText}`, x, y + size / 2 + 25);
-            }
-        }
-
-        ctx.restore();
+        this.renderer.renderConstructionCursor();
     }
 
     renderBuilding(building) {
-        const ctx = this.ctx;
-        const x = building.x;
-        const y = building.y;
-        const size = building.size;
-
-        ctx.save();
-
-        // Ombre
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.beginPath();
-        ctx.ellipse(x + 2, y + size / 2 + 2, size / 2, size / 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Bâtiment
-        ctx.fillStyle = building.color || '#888888';
-
-        switch (building.type) {
-            case 'fire':
-                // Flammes animées
-                for (let i = 0; i < 5; i++) {
-                    const flameHeight = size / 2 + Math.sin(building.animation * 4 + i) * size / 8;
-                    const flameX = x + (i - 2) * size / 8;
-                    ctx.fillStyle = i % 2 === 0 ? '#FF4500' : '#FF6500';
-                    ctx.beginPath();
-                    ctx.ellipse(flameX, y - flameHeight / 4, size / 12, flameHeight, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                // Base du feu
-                ctx.fillStyle = '#654321';
-                ctx.fillRect(x - size / 3, y + size / 4, size / 1.5, size / 6);
-                break;
-
-            case 'hut':
-                // Base + toit
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(x - size / 2, y - size / 4, size, size / 2);
-                ctx.fillStyle = '#654321';
-                ctx.beginPath();
-                ctx.moveTo(x - size / 1.5, y - size / 4);
-                ctx.lineTo(x, y - size / 1.2);
-                ctx.lineTo(x + size / 1.5, y - size / 4);
-                ctx.closePath();
-                ctx.fill();
-                break;
-
-            default:
-                // Bâtiment générique
-                ctx.fillRect(x - size / 2, y - size / 2, size, size);
-                if (building.icon) {
-                    ctx.font = `${size / 2}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = 'white';
-                    ctx.fillText(building.icon, x, y + size / 6);
-                }
-        }
-
-        // Indicateur de travailleurs
-        if (building.maxWorkers > 0) {
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 10px Arial';
-            ctx.textAlign = 'center';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            const text = `${building.workers.length}/${building.maxWorkers}`;
-            ctx.strokeText(text, x, y - size / 2 - 5);
-            ctx.fillText(text, x, y - size / 2 - 5);
-        }
-
-        // Indicateur d'attraction (debug)
-        if (this.config.debugMode && building.attractsPeople) {
-            ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.arc(x, y, building.attractionRange || 200, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        ctx.restore();
+        this.renderer.renderBuilding(building);
     }
 
     renderCitizen(citizen) {
-        const ctx = this.ctx;
-        const x = citizen.x;
-        const y = citizen.y;
-
-        ctx.save();
-
-        // Ombre
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        ctx.beginPath();
-        ctx.ellipse(x, y + 8, 6, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Corps
-        ctx.fillStyle = citizen.color?.cloth || '#4169E1';
-        ctx.fillRect(x - 4, y - 3, 8, 12);
-
-        // Tête
-        ctx.fillStyle = citizen.color?.skin || '#FDBCB4';
-        ctx.beginPath();
-        ctx.arc(x, y - 8, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Yeux
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x - 2, y - 9, 1, 1);
-        ctx.fillRect(x + 1, y - 9, 1, 1);
-
-        // Indicateur d'état (debug)
-        if (this.config.debugMode) {
-            ctx.fillStyle = this.getCitizenStateColor(citizen.state);
-            ctx.beginPath();
-            ctx.arc(x, y - 15, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Nom du citoyen
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 8px Arial';
-            ctx.textAlign = 'center';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            ctx.strokeText(citizen.name.split(' ')[0], x, y - 20);
-            ctx.fillText(citizen.name.split(' ')[0], x, y - 20);
-        }
-
-        ctx.restore();
+        this.renderer.renderCitizen(citizen);
     }
 
-    getCitizenStateColor(state) {
-        const colors = {
-            'idle': '#888888',
-            'seeking_food': '#FF6B35',
-            'seeking_water': '#4169E1',
-            'working': '#32CD32',
-            'sleeping': '#9370DB',
-            'socializing': '#FFD700',
-            'wandering': '#20B2AA'
-        };
-        return colors[state] || '#888888';
-    }
 
     updateCitizens(deltaTime) {
-        const citizensToRemove = [];
-
-        this.citizens.forEach((citizen, index) => {
-            try {
-                const isAlive = citizen.update(deltaTime);
-                if (!isAlive) {
-                    citizensToRemove.push(index);
-                    this.onCitizenDied({ data: { citizen } });
-                }
-            } catch (error) {
-                console.error(`❌ Erreur lors de la mise à jour du citoyen ${citizen.name}:`, error);
-                citizensToRemove.push(index);
-            }
-        });
-
-        // Supprimer les citoyens morts ou défaillants (en partant de la fin)
-        citizensToRemove.reverse().forEach(index => {
-            this.citizens.splice(index, 1);
-        });
+        this.stateManager.updateCitizens(deltaTime);
     }
 
     updateBuildings(deltaTime) {
-        this.buildings.forEach(building => {
-            building.update(deltaTime);
-        });
+        this.stateManager.updateBuildings(deltaTime);
     }
 
     assignJobsToUnemployed() {
-        const unemployed = this.citizens.filter(c => !c.job);
-        const jobsAvailable = this.buildings.filter(b => b.needsWorkers && b.needsWorkers());
-
-        unemployed.forEach(citizen => {
-            const nearbyJobs = jobsAvailable.filter(building =>
-                citizen.getDistanceTo(building.x, building.y) < 200
-            );
-
-            if (nearbyJobs.length > 0) {
-                const closestJob = nearbyJobs.reduce((closest, building) => {
-                    const distToCurrent = citizen.getDistanceTo(building.x, building.y);
-                    const distToClosest = citizen.getDistanceTo(closest.x, closest.y);
-                    return distToCurrent < distToClosest ? building : closest;
-                });
-
-                citizen.assignJob(closestJob);
-            }
-        });
+        this.stateManager.assignJobsToUnemployed();
     }
 
     checkGameBalance() {
-        const population = this.citizens.length;
-        const resources = this.resourceManager.getSummary();
-
-        // Éviter le spam de notifications avec un système de cooldown
-        const now = Date.now();
-        if (!this.lastNotifications) {
-            this.lastNotifications = {};
-        }
-
-        // Cooldown de 10 secondes entre les mêmes notifications
-        const notificationCooldown = 10000; // 10 secondes
-
-        // Alertes de ressources critiques
-        ['food', 'water'].forEach(resource => {
-            if (resources[resource] && resources[resource].amount < population * 2) {
-                const notificationKey = `critical_${resource}`;
-                const lastNotification = this.lastNotifications[notificationKey] || 0;
-                
-                // Ne notifier que si le cooldown est écoulé
-                if (now - lastNotification > notificationCooldown) {
-                    eventSystem.emit(GameEvents.UI_NOTIFICATION, {
-                        type: 'error',
-                        message: `Manque critique de ${resource}!`
-                    });
-                    this.lastNotifications[notificationKey] = now;
-                }
-            }
-        });
-
-        // Vérifications supplémentaires sans spam
-        this.checkResourceBalance(population, resources);
+        this.stateManager.checkGameBalance();
     }
 
-    checkResourceBalance(population, resources) {
-        // Vérification du bonheur général
-        if (population > 0) {
-            const avgHappiness = this.citizens.reduce((sum, c) => sum + c.happiness, 0) / population;
-            
-            if (avgHappiness < 30 && !this.lowHappinessWarned) {
-                eventSystem.emit(GameEvents.UI_NOTIFICATION, {
-                    type: 'warning',
-                    message: 'Le bonheur de la population est très bas!'
-                });
-                this.lowHappinessWarned = true;
-            } else if (avgHappiness > 60) {
-                this.lowHappinessWarned = false; // Reset du warning
-            }
-        }
-
-        // Vérification de la production
-        this.checkProductionBalance(resources);
+    checkResourceBalance(p,r) {
+        this.stateManager.checkResourceBalance(p,r);
     }
 
-    checkProductionBalance(resources) {
-        // Avertir si aucune production de nourriture
-        const foodProducers = this.buildings.filter(b => 
-            b.produces === 'food' || b.type === 'farm' || b.type === 'berry_bush'
-        );
-        
-        if (foodProducers.length === 0 && this.citizens.length > 2) {
-            const now = Date.now();
-            const lastWarning = this.lastNotifications['no_food_production'] || 0;
-            
-            if (now - lastWarning > 30000) { // 30 secondes
-                eventSystem.emit(GameEvents.UI_NOTIFICATION, {
-                    type: 'warning',
-                    message: 'Aucune production de nourriture ! Construisez une ferme.'
-                });
-                this.lastNotifications['no_food_production'] = now;
-            }
-        }
-
-        // Avertir si aucune production d'eau
-        const waterProducers = this.buildings.filter(b => b.type === 'well');
-        
-        if (waterProducers.length === 0 && this.citizens.length > 3) {
-            const now = Date.now();
-            const lastWarning = this.lastNotifications['no_water_production'] || 0;
-            
-            if (now - lastWarning > 30000) { // 30 secondes
-                eventSystem.emit(GameEvents.UI_NOTIFICATION, {
-                    type: 'warning',
-                    message: 'Aucune production d\'eau ! Construisez un puits.'
-                });
-                this.lastNotifications['no_water_production'] = now;
-            }
-        }
+    checkProductionBalance(r) {
+        this.stateManager.checkProductionBalance(r);
     }
 
     handleCanvasClick(event) {
-        // Calcul précis des coordonnées relatives au canvas
-        const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;   // Rapport de mise à l'échelle X
-        const scaleY = this.canvas.height / rect.height; // Rapport de mise à l'échelle Y
-        
-        // Coordonnées exactes dans le canvas
-        const x = (event.clientX - rect.left) * scaleX;
-        const y = (event.clientY - rect.top) * scaleY;
-        
-        // S'assurer que les coordonnées sont dans les limites
-        const clampedX = Math.max(0, Math.min(this.canvas.width, x));
-        const clampedY = Math.max(0, Math.min(this.canvas.height, y));
-
-        console.log(`🖱️ Clic détecté: (${clampedX.toFixed(1)}, ${clampedY.toFixed(1)})`);
-
-        if (this.selectedBuildingType) {
-            this.placeBuilding(this.selectedBuildingType, clampedX, clampedY);
-        } else {
-            this.selectObjectAt(clampedX, clampedY);
-        }
+        this.eventHandler.handleCanvasClick(event);
     }
 
     handleMouseMove(event) {
-        // Même calcul précis pour le mouvement de la souris
-        const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-        
-        // Mettre à jour les coordonnées de la souris en temps réel
-        this.mouseX = (event.clientX - rect.left) * scaleX;
-        this.mouseY = (event.clientY - rect.top) * scaleY;
-        
-        // S'assurer que les coordonnées restent dans les limites
-        this.mouseX = Math.max(0, Math.min(this.canvas.width, this.mouseX));
-        this.mouseY = Math.max(0, Math.min(this.canvas.height, this.mouseY));
+        this.eventHandler.handleMouseMove(event);
     }
 
     selectBuilding(type) {
@@ -1176,30 +690,12 @@ class Game {
             message: 'Nouvelle partie commencée !'
         });
     }
-
     onCitizenDied(event) {
-        const citizen = event.data.citizen;
-        console.log(`💀 Citoyen décédé: ${citizen.name}`);
-        
-        // Libérer le travail si nécessaire
-        if (citizen.job) {
-            citizen.job.removeWorker(citizen);
-        }
-        
-        eventSystem.emit(GameEvents.UI_NOTIFICATION, {
-            type: 'warning',
-            message: `${citizen.name} est décédé`
-        });
+        this.eventHandler.onCitizenDied(event);
     }
 
     onBuildingPlaced(event) {
-        const building = event.data.building;
-        console.log(`🏗️ Bâtiment construit: ${building.name || building.type}`);
-        
-        eventSystem.emit(GameEvents.UI_NOTIFICATION, {
-            type: 'success',
-            message: `${building.name || building.type} construit !`
-        });
+        this.eventHandler.onBuildingPlaced(event);
     }
 
     getGameStats() {

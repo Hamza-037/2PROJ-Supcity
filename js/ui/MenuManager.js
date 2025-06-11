@@ -1,7 +1,8 @@
 // js/ui/MenuManager.js - Gestionnaire du menu principal (VERSION SIMPLE)
 
 class MenuManager {
-    constructor() {
+    constructor(app) {
+        this.app = app;
         this.currentScreen = 'menu';
         
         // Éléments DOM
@@ -179,7 +180,7 @@ class MenuManager {
     async initializeGame(saveSlot = null, isTutorial = false) {
         try {
             // Obtenir l'instance de l'app principale
-            const app = window.supCityApp;
+            const app = this.app;
             
             if (!app) {
                 throw new Error('Application principale non trouvée');

@@ -71,15 +71,4 @@ class Minimap {
     }
 }
 
-// Export de toutes les classes graphiques
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        Renderer, Camera, ParticleSystem, AnimationManager, Minimap
-    };
-} else {
-    window.Renderer = Renderer;
-    window.Camera = Camera;
-    window.ParticleSystem = ParticleSystem;
-    window.AnimationManager = AnimationManager;
-    window.Minimap = Minimap;
-}
+export { Minimap }

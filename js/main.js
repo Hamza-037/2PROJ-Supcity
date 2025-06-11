@@ -17,26 +17,6 @@ import { Game } from './Game.js';
 import { AudioManager } from './core/AudioManager.js';
 import { MenuManager } from './ui/MenuManager.js';
 
-// Exposition des classes au scope global pour la compatibilité
-window.EventSystem = EventSystem;
-window.GameEvents = GameEvents;
-window.eventSystem = eventSystem;
-window.GameTime = GameTime;
-window.ResourceManager = ResourceManager;
-window.SaveSystem = SaveSystem;
-window.BuildingDataManager = BuildingDataManager;
-window.Building = Building;
-window.Citizen = Citizen;
-window.PathfindingSystem = PathfindingSystem;
-window.Camera = Camera;
-window.ParticleSystem = ParticleSystem;
-window.Particle = Particle;
-window.Renderer = Renderer;
-window.UIManager = UIManager;
-window.NotificationSystem = NotificationSystem;
-window.Vehicle = Vehicle;
-window.Game = Game;
-
 /**
  * Gestionnaire principal de l'application SupCity avec menu intégré
  */
@@ -75,7 +55,7 @@ class SupCityApp {
             await this.checkCompatibility();
 
             // Initialiser le gestionnaire de menu
-            this.menuManager = new MenuManager();
+            this.menuManager = new MenuManager(this);
 
             // Configurer les contrôles du jeu (préparés pour quand le jeu sera lancé)
             this.setupGameControls();
@@ -293,14 +273,18 @@ class SupCityApp {
      */
     async initializeSystems() {
         // Vérifier que tous les systèmes sont disponibles
-        const requiredClasses = [
-            'EventSystem', 'ResourceManager', 'GameTime',
-            'Citizen', 'Building', 'Game'
+        const classes = [
+            { cls: EventSystem, name: 'EventSystem' },
+            { cls: ResourceManager, name: 'ResourceManager' },
+            { cls: GameTime, name: 'GameTime' },
+            { cls: Citizen, name: 'Citizen' },
+            { cls: Building, name: 'Building' },
+            { cls: Game, name: 'Game' }
         ];
 
-        for (const className of requiredClasses) {
-            if (typeof window[className] === 'undefined') {
-                throw new Error(`Classe manquante: ${className}`);
+        for (const { cls, name } of classes) {
+            if (typeof cls === 'undefined') {
+                throw new Error(`Classe manquante: ${name}`);
             }
         }
 
@@ -977,7 +961,7 @@ class SupCityApp {
 
 // Démarrage de l'application quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', () => {
-    window.supCityApp = new SupCityApp();
+    new SupCityApp();
 });
 
 // Gestion des erreurs globales
